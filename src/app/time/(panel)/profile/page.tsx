@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { PasswordInput } from "@/components/PasswordInput";
+import { Snackbar } from "@/components/Snackbar";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { AdminEmployee } from "@/lib/auth";
 
@@ -24,7 +25,8 @@ export default function ProfilePage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
-  const [saveOk, setSaveOk] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const closeSnackbar = useCallback(() => setSnackbarOpen(false), []);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -57,28 +59,24 @@ export default function ProfilePage() {
       if (pw || pc) {
         if (pw && !pc) {
           setSaveErr(t("fillPasswordConfirm"));
-          setSaveOk(false);
           return;
         }
         if (!pw && pc) {
           setSaveErr(t("fillNewPassword"));
-          setSaveOk(false);
           return;
         }
         if (pw !== pc) {
           setSaveErr(t("passwordMismatch"));
-          setSaveOk(false);
           return;
         }
         if (pw.length < 6) {
           setSaveErr(t("passwordMin6"));
-          setSaveOk(false);
           return;
         }
       }
       setSaving(true);
       setSaveErr(null);
-      setSaveOk(false);
+      setSnackbarOpen(false);
       try {
         const body: Record<string, unknown> = {
           fullName: fullName.trim(),
@@ -100,7 +98,7 @@ export default function ProfilePage() {
         setAuth(token, next);
         setPassword("");
         setPasswordConfirm("");
-        setSaveOk(true);
+        setSnackbarOpen(true);
       } catch (err) {
         setSaveErr(err instanceof ApiError ? err.message : t("errorLoad"));
       } finally {
@@ -207,7 +205,6 @@ export default function ProfilePage() {
           </div>
 
           {saveErr && <p className="text-sm text-rose-400">{saveErr}</p>}
-          {saveOk && <p className="text-sm text-emerald-400">{t("profileSaved")}</p>}
 
           <button
             type="submit"
@@ -218,6 +215,13 @@ export default function ProfilePage() {
           </button>
         </form>
       )}
+
+      <Snackbar
+        open={snackbarOpen}
+        message={t("profileSaved")}
+        onClose={closeSnackbar}
+        placement="top-end"
+      />
     </div>
   );
 }
