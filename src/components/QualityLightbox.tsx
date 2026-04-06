@@ -24,7 +24,7 @@ type Props = {
 
 function decisionBadge(t: (k: string) => string, d: string | undefined) {
   const u = String(d || "NONE").toUpperCase();
-  if (u === "OK") return { label: t("uiStatusOk"), className: "text-emerald-300" };
+  if (u === "OK") return { label: t("uiStatusOk"), className: "text-teal-300" };
   if (u === "FE") return { label: t("uiStatusFe"), className: "text-amber-200" };
   if (u === "ERROR") return { label: t("uiStatusError"), className: "text-rose-300" };
   return { label: t("qualityPhotoNotReviewed"), className: "text-slate-500" };
@@ -84,14 +84,14 @@ export function QualityLightbox({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex flex-col bg-black/90 backdrop-blur-md"
       role="dialog"
       aria-modal
       aria-label={t("openImage")}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2 sm:px-4">
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] bg-black/20 px-3 py-2 sm:px-4">
         <div className="min-w-0 text-xs text-slate-400 sm:text-sm">
-          {photo.photoType && <span className="text-emerald-300/90">{photo.photoType}</span>}
+          {photo.photoType && <span className="text-teal-300/90">{photo.photoType}</span>}
           <span className="ml-2 text-slate-500">
             {index + 1} / {photos.length}
           </span>
@@ -102,7 +102,7 @@ export function QualityLightbox({
             type="button"
             disabled={busy}
             onClick={() => setScale((s) => Math.min(4, s + 0.25))}
-            className="rounded-lg border border-white/15 px-2 py-1.5 text-xs text-white hover:bg-white/10 disabled:opacity-40"
+            className="rounded-lg border border-white/[0.12] bg-white/[0.04] px-2 py-1.5 text-xs text-white transition hover:bg-white/[0.08] disabled:opacity-40"
           >
             {t("zoomIn")}
           </button>
@@ -110,7 +110,7 @@ export function QualityLightbox({
             type="button"
             disabled={busy}
             onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
-            className="rounded-lg border border-white/15 px-2 py-1.5 text-xs text-white hover:bg-white/10 disabled:opacity-40"
+            className="rounded-lg border border-white/[0.12] bg-white/[0.04] px-2 py-1.5 text-xs text-white transition hover:bg-white/[0.08] disabled:opacity-40"
           >
             {t("zoomOut")}
           </button>
@@ -121,7 +121,7 @@ export function QualityLightbox({
               setScale(1);
               setPos({ x: 0, y: 0 });
             }}
-            className="rounded-lg border border-white/15 px-2 py-1.5 text-xs text-white hover:bg-white/10 disabled:opacity-40"
+            className="rounded-lg border border-white/[0.12] bg-white/[0.04] px-2 py-1.5 text-xs text-white transition hover:bg-white/[0.08] disabled:opacity-40"
           >
             {t("resetZoom")}
           </button>
@@ -129,7 +129,7 @@ export function QualityLightbox({
             type="button"
             disabled={busy || index <= 0}
             onClick={() => onIndexChange(index - 1)}
-            className="rounded-lg border border-white/15 px-2 py-1.5 text-xs text-white hover:bg-white/10 disabled:opacity-40"
+            className="rounded-lg border border-white/[0.12] bg-white/[0.04] px-2 py-1.5 text-xs text-white transition hover:bg-white/[0.08] disabled:opacity-40"
           >
             {t("prev")}
           </button>
@@ -137,14 +137,14 @@ export function QualityLightbox({
             type="button"
             disabled={busy || index >= photos.length - 1}
             onClick={() => onIndexChange(index + 1)}
-            className="rounded-lg border border-white/15 px-2 py-1.5 text-xs text-white hover:bg-white/10 disabled:opacity-40"
+            className="rounded-lg border border-white/[0.12] bg-white/[0.04] px-2 py-1.5 text-xs text-white transition hover:bg-white/[0.08] disabled:opacity-40"
           >
             {t("next")}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-white/20 bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800"
+            className="rounded-lg border border-white/[0.12] bg-white/[0.08] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/[0.12]"
           >
             {t("close")}
           </button>
@@ -184,7 +184,7 @@ export function QualityLightbox({
         />
       </div>
 
-      <p className="border-t border-white/10 px-4 py-2 text-center text-[11px] text-slate-500">
+      <p className="border-t border-white/[0.06] px-4 py-2 text-center text-[11px] text-slate-500">
         {t("fullscreenHint")}
       </p>
 
@@ -192,7 +192,7 @@ export function QualityLightbox({
         {t("qualityPerPhotoHint")}
       </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-slate-950/90 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-center gap-2 border-t border-white/[0.08] bg-black/35 px-4 py-3 backdrop-blur-md">
         <button
           type="button"
           disabled={busy}
@@ -213,7 +213,7 @@ export function QualityLightbox({
           type="button"
           disabled={busy}
           onClick={() => void applyDecision("OK")}
-          className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 disabled:opacity-50"
+          className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/25 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50"
         >
           {t("actionOk")}
         </button>

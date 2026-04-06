@@ -42,8 +42,8 @@ export function Snackbar({ open, message, onClose, durationMs = 4000, placement 
       aria-live="polite"
       aria-atomic="true"
     >
-      <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-sm text-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur-md">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+      <div className="ui-card flex items-center gap-2.5 px-4 py-3 text-sm text-slate-100">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-400/15 text-teal-300">
           <CheckIcon />
         </span>
         <span className="leading-snug">{message}</span>

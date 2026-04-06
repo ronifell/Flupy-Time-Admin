@@ -158,7 +158,7 @@ export default function EmployeesPage() {
   }, [token, editId, form, t, load, closeEdit]);
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/50";
+    "mt-1 w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2 text-sm text-white outline-none focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20";
 
   return (
     <div className="space-y-6">
@@ -170,17 +170,17 @@ export default function EmployeesPage() {
         <button
           type="button"
           onClick={load}
-          className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
+          className="self-start rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30"
         >
           {t("retry")}
         </button>
       </div>
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
-      <div className="overflow-x-auto rounded-3xl border border-white/10 bg-slate-900/40 scrollbar-thin">
+      <div className="ui-table-wrap scrollbar-thin overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
               <th className="px-4 py-3 font-medium">{t("employeeCode")}</th>
               <th className="px-4 py-3 font-medium">{t("name")}</th>
               <th className="px-4 py-3 font-medium">{t("role")}</th>
@@ -197,14 +197,14 @@ export default function EmployeesPage() {
             )}
             {items.map((e) => (
               <tr key={e.id} className="hover:bg-white/[0.03]">
-                <td className="px-4 py-3 font-mono text-emerald-200/90">{e.employeeCode}</td>
+                <td className="px-4 py-3 font-mono text-teal-200/90">{e.employeeCode}</td>
                 <td className="px-4 py-3 font-medium text-white">{e.fullName}</td>
                 <td className="px-4 py-3 text-slate-400">{roleLabel(t, e.role)}</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     type="button"
                     onClick={() => void openEdit(e.id)}
-                    className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                    className="rounded-lg border border-teal-400/35 bg-teal-400/10 px-3 py-1.5 text-xs font-medium text-teal-200 transition hover:bg-teal-400/18"
                   >
                     {t("edit")}
                   </button>
@@ -217,12 +217,12 @@ export default function EmployeesPage() {
 
       {editId && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-4 backdrop-blur-sm sm:items-center"
           role="dialog"
           aria-modal
           aria-labelledby="emp-edit-title"
         >
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl scrollbar-thin">
+          <div className="ui-modal max-h-[90vh] w-full max-w-lg overflow-y-auto p-5 scrollbar-thin">
             <h2 id="emp-edit-title" className="text-lg font-semibold text-white">
               {t("editEmployee")}
             </h2>
@@ -320,7 +320,7 @@ export default function EmployeesPage() {
                       type="checkbox"
                       checked={form.isSupervisor}
                       onChange={(e) => setForm((f) => ({ ...f, isSupervisor: e.target.checked }))}
-                      className="rounded border-white/20 bg-slate-950 text-emerald-500"
+                      className="rounded border-white/20 bg-[rgba(3,6,14,0.8)] text-teal-400"
                     />
                     {t("isSupervisorFlag")}
                   </label>
@@ -341,7 +341,7 @@ export default function EmployeesPage() {
                   <button
                     type="button"
                     onClick={closeEdit}
-                    className="rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-white/25"
+                    className="rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 transition hover:border-white/[0.15]"
                   >
                     {t("cancel")}
                   </button>
@@ -349,7 +349,7 @@ export default function EmployeesPage() {
                     type="button"
                     disabled={saving || !form.fullName.trim()}
                     onClick={() => void submitEdit()}
-                    className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50"
+                    className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/20 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50"
                   >
                     {saving ? t("saving") : t("save")}
                   </button>

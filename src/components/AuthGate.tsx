@@ -21,8 +21,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!ready || !token) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-slate-400">
-        {t("loading")}
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-400/80" aria-hidden />
+          {t("loading")}
+        </span>
       </div>
     );
   }

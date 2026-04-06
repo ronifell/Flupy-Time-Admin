@@ -1,10 +1,10 @@
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-lg font-bold text-slate-950 shadow-lg shadow-emerald-500/25 ${className}`}
+      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-base font-bold text-slate-950 shadow-lg shadow-teal-500/20 ring-1 ring-white/20 ${className}`}
       aria-hidden
     >
-      F
+      <span className="relative z-10">F</span>
     </div>
   );
 }

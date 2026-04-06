@@ -1,9 +1,59 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api";
+
+const COUNT_UP_MS = 900;
+
+function useCountUp(target: number | null, replayKey: number) {
+  const [value, setValue] = useState(0);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (target === null) {
+      setValue(0);
+      return;
+    }
+
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReduced) {
+      setValue(target);
+      return;
+    }
+
+    let cancelled = false;
+    const from = 0;
+    const to = target;
+    const t0 = performance.now();
+
+    setValue(0);
+
+    const step = (now: number) => {
+      if (cancelled) return;
+      const t = Math.min(1, (now - t0) / COUNT_UP_MS);
+      const eased = 1 - (1 - t) ** 3;
+      setValue(Math.round(from + (to - from) * eased));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        setValue(to);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [target, replayKey]);
+
+  return target === null ? null : value;
+}
 
 type Summary = {
   activeEmployees: number;
@@ -32,11 +82,22 @@ type ActRow = {
   index: number;
 };
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
+function StatCard({
+  label,
+  target,
+  replayKey
+}: {
+  label: string;
+  target: number | null;
+  replayKey: number;
+}) {
+  const display = useCountUp(target, replayKey);
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 shadow-lg shadow-black/20 sm:p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold tabular-nums text-white sm:text-4xl">{value}</p>
+    <div className="ui-card p-4 sm:p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-2 bg-gradient-to-br from-white to-slate-300 bg-clip-text text-3xl font-bold tabular-nums text-transparent sm:text-4xl">
+        {display === null ? "—" : display}
+      </p>
     </div>
   );
 }
@@ -48,6 +109,7 @@ export default function DashboardPage() {
   const [attendance, setAttendance] = useState<AttRow[]>([]);
   const [activity, setActivity] = useState<ActRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [statsReplayKey, setStatsReplayKey] = useState(0);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -59,6 +121,7 @@ export default function DashboardPage() {
         apiFetch<{ items: ActRow[] }>("/admin/activity/recent?limit=12", { token })
       ]);
       setSummary(s);
+      setStatsReplayKey((k) => k + 1);
       setAttendance(a.items || []);
       setActivity(act.items || []);
     } catch (e) {
@@ -96,7 +159,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{t("dashboardTitle")}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400 sm:text-base">{t("dashboardSubtitle")}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base">{t("dashboardSubtitle")}</p>
           {summary?.workdayDate && (
             <p className="mt-1 text-xs text-slate-500">
               {locale === "es" ? "Día operativo" : "Workday"}: {summary.workdayDate}
@@ -107,13 +170,13 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => load()}
-            className="rounded-xl border border-white/15 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 hover:border-emerald-500/40"
+            className="rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30 hover:bg-white/[0.07]"
           >
             {t("retry")}
           </button>
           <button
             type="button"
-            className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+            className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/25 transition hover:from-teal-400 hover:to-emerald-400"
           >
             {t("newAction")}
           </button>
@@ -123,19 +186,19 @@ export default function DashboardPage() {
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t("activeEmployees")} value={summary?.activeEmployees ?? "—"} />
-        <StatCard label={t("checkInsToday")} value={summary?.checkInsToday ?? "—"} />
-        <StatCard label={t("tardiness")} value={summary?.tardinessToday ?? "—"} />
-        <StatCard label={t("geofences")} value={summary?.geofences ?? "—"} />
+        <StatCard label={t("activeEmployees")} target={summary?.activeEmployees ?? null} replayKey={statsReplayKey} />
+        <StatCard label={t("checkInsToday")} target={summary?.checkInsToday ?? null} replayKey={statsReplayKey} />
+        <StatCard label={t("tardiness")} target={summary?.tardinessToday ?? null} replayKey={statsReplayKey} />
+        <StatCard label={t("geofences")} target={summary?.geofences ?? null} replayKey={statsReplayKey} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-3xl border border-white/10 bg-slate-900/40 p-4 sm:p-5">
-          <h2 className="text-lg font-semibold text-white">{t("recentAttendance")}</h2>
+        <section className="ui-card p-4 sm:p-5">
+          <h2 className="text-lg font-semibold tracking-tight text-white">{t("recentAttendance")}</h2>
           <div className="mt-4 overflow-x-auto scrollbar-thin">
             <table className="w-full min-w-[420px] text-left text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
                   <th className="pb-3 pr-2 font-medium">{t("name")}</th>
                   <th className="pb-3 pr-2 font-medium">{t("type")}</th>
                   <th className="pb-3 pr-2 font-medium">{t("status")}</th>
@@ -158,7 +221,7 @@ export default function DashboardPage() {
                       {row.eventType === "CHECK_IN" ? (
                         <span
                           className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                            row.onTime ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-200"
+                            row.onTime ? "bg-teal-500/15 text-teal-200" : "bg-amber-500/15 text-amber-200"
                           }`}
                         >
                           {row.onTime ? t("onTime") : t("late")}
@@ -175,14 +238,14 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-slate-900/40 p-4 sm:p-5">
-          <h2 className="text-lg font-semibold text-white">{t("recentActivity")}</h2>
+        <section className="ui-card p-4 sm:p-5">
+          <h2 className="text-lg font-semibold tracking-tight text-white">{t("recentActivity")}</h2>
           <ul className="mt-4 space-y-3">
             {activity.length === 0 && <li className="text-slate-500">{t("noData")}</li>}
             {activity.map((row) => (
               <li
                 key={row.id}
-                className="rounded-2xl border border-white/5 bg-slate-950/50 px-4 py-3 text-sm text-slate-300"
+                className="ui-card-soft rounded-xl px-4 py-3 text-sm text-slate-300"
               >
                 <p>
                   {t("activityLine", {

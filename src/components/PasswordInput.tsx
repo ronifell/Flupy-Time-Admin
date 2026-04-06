@@ -33,7 +33,7 @@ export function PasswordInput({
   const [visible, setVisible] = useState(false);
 
   const inputClass =
-    "w-full rounded-xl border border-white/10 bg-slate-950 py-2.5 pl-3 pr-11 text-sm text-white outline-none focus:border-emerald-500/50 disabled:opacity-50";
+    "w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] py-2.5 pl-3 pr-11 text-sm text-white outline-none ring-0 transition focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20 disabled:opacity-50";
 
   return (
     <div className={`relative ${wrapperClassName}`}>
@@ -52,7 +52,7 @@ export function PasswordInput({
         type="button"
         disabled={disabled}
         onClick={() => setVisible((v) => !v)}
-        className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-emerald-400 disabled:pointer-events-none disabled:opacity-40"
+        className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.06] hover:text-teal-400 disabled:pointer-events-none disabled:opacity-40"
         aria-label={visible ? t("hidePassword") : t("showPassword")}
         aria-pressed={visible}
       >

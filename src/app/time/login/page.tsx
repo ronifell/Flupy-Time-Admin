@@ -64,30 +64,35 @@ function LoginForm() {
     }
   }
 
+  const fieldClass =
+    "mt-1.5 w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2.5 text-sm text-white outline-none transition focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20";
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="flex items-center justify-between border-b border-white/10 px-4 py-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <LogoMark />
-          <div>
-            <div className="text-sm font-semibold">{t("brand")}</div>
-            <div className="text-xs text-slate-500">{t("flupyTimeTitle")}</div>
-          </div>
-        </Link>
-        <LangSwitch />
+    <div className="min-h-screen text-slate-100">
+      <header className="ui-glass-header">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-4 px-4 py-4 sm:px-8">
+          <Link href="/" className="flex items-center gap-3">
+            <LogoMark />
+            <div>
+              <div className="text-sm font-semibold tracking-tight">{t("brand")}</div>
+              <div className="text-xs text-slate-500">{t("flupyTimeTitle")}</div>
+            </div>
+          </Link>
+          <LangSwitch />
+        </div>
       </header>
 
       <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-12 sm:py-20">
         <h1 className="text-2xl font-bold tracking-tight text-white">{t("loginTitle")}</h1>
-        <p className="mt-2 text-sm text-slate-400">{t("loginSubtitle")}</p>
+        <p className="mt-2 text-sm text-slate-500">{t("loginSubtitle")}</p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-xl">
+        <form onSubmit={onSubmit} className="ui-card mt-8 space-y-4 rounded-3xl p-6 sm:p-7">
           <div>
-            <label className="block text-xs font-medium text-slate-400">{t("company")}</label>
+            <label className="block text-xs font-medium text-slate-500">{t("company")}</label>
             <select
               value={companyId}
               onChange={(e) => setCompanyId(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+              className={fieldClass}
             >
               <option value="">{t("selectCompany")}</option>
               {companies.map((c) => (
@@ -96,21 +101,21 @@ function LoginForm() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] text-slate-500">{t("companyOptional")}</p>
+            <p className="mt-1 text-[11px] text-slate-600">{t("companyOptional")}</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400">{t("employeeId")}</label>
+            <label className="block text-xs font-medium text-slate-500">{t("employeeId")}</label>
             <input
               required
               autoComplete="username"
               value={employeeCode}
               onChange={(e) => setEmployeeCode(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+              className={fieldClass}
               placeholder="ADM001"
             />
           </div>
           <div>
-            <label htmlFor="login-password" className="block text-xs font-medium text-slate-400">
+            <label htmlFor="login-password" className="block text-xs font-medium text-slate-500">
               {t("password")}
             </label>
             <PasswordInput
@@ -120,19 +125,20 @@ function LoginForm() {
               autoComplete="current-password"
               required
               disabled={loading}
+              wrapperClassName="mt-1.5"
             />
           </div>
           {error && <p className="text-sm text-rose-400">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/25 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-60"
           >
             {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
 
-        <Link href="/" className="mt-6 block text-center text-sm text-emerald-400/90 hover:text-emerald-300">
+        <Link href="/" className="mt-6 block text-center text-sm text-teal-400/90 transition hover:text-teal-300">
           {t("backToPortal")}
         </Link>
       </div>
@@ -142,7 +148,7 @@ function LoginForm() {
 
 export default function TimeLoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 p-8 text-slate-400">…</div>}>
+    <Suspense fallback={<div className="min-h-screen p-8 text-slate-500">…</div>}>
       <LoginForm />
     </Suspense>
   );

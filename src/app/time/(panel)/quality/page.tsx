@@ -25,7 +25,7 @@ type EmpOption = { id: string; employeeCode: string; fullName: string };
 
 function badgeForItem(item: QItem, t: (k: string) => string) {
   if (item.status === "APPROVED" || item.inspectorDecision === "OK") {
-    return { label: t("uiStatusOk"), className: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" };
+    return { label: t("uiStatusOk"), className: "bg-teal-500/15 text-teal-200 ring-teal-500/30" };
   }
   if (item.status === "REJECTED" || item.inspectorDecision === "ERROR") {
     return { label: t("uiStatusError"), className: "bg-rose-500/15 text-rose-300 ring-rose-500/30" };
@@ -105,14 +105,14 @@ function CalendarDateField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete="off"
-          className="calendar-picker-input min-h-[44px] flex-1 rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30"
+          className="calendar-picker-input min-h-[44px] flex-1 rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2.5 text-sm text-white outline-none focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20"
         />
         <button
           type="button"
           onClick={(e) => openPicker(e)}
           aria-label={openLabel}
           title={openLabel}
-          className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900 text-emerald-400 transition hover:border-emerald-500/40 hover:bg-slate-800 hover:text-emerald-300"
+          className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] text-teal-400 transition hover:border-teal-400/35 hover:bg-white/[0.08] hover:text-teal-300"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
@@ -271,7 +271,7 @@ export default function QualityPage() {
   }
 
   const inputClass =
-    "mt-1.5 w-full min-h-[44px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500/50";
+    "mt-1.5 w-full min-h-[44px] rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20";
 
   return (
     <div className="space-y-6">
@@ -285,13 +285,13 @@ export default function QualityPage() {
           onClick={() =>
             void fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus)
           }
-          className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
+          className="self-start rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30"
         >
           {t("retry")}
         </button>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 sm:p-5">
+      <section className="ui-card p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <CalendarDateField
             id="quality-filter-from"
@@ -362,14 +362,14 @@ export default function QualityPage() {
             <button
               type="button"
               onClick={applyFilters}
-              className="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+              className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/25 transition hover:from-teal-400 hover:to-emerald-400"
             >
               {t("filterApply")}
             </button>
             <button
               type="button"
               onClick={clearFilters}
-              className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-slate-200 hover:border-emerald-500/40"
+              className="rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30"
             >
               {t("filterClear")}
             </button>
@@ -380,10 +380,10 @@ export default function QualityPage() {
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
       {/* Desktop: table — no thumbnails; open row to load photos */}
-      <div className="hidden overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/40 md:block">
+      <div className="ui-table-wrap hidden md:block">
         <table className="w-full min-w-[880px] text-left text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
               <th className="px-4 py-3 font-medium">{t("filterStatus")}</th>
               <th className="px-4 py-3 font-medium">{t("date")}</th>
               <th className="px-4 py-3 font-medium">{t("filterOrderId")}</th>
@@ -412,7 +412,7 @@ export default function QualityPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-slate-400">{fmt(q.createdAt)}</td>
-                  <td className="px-4 py-3 font-mono text-emerald-200/90">{q.orderId}</td>
+                  <td className="px-4 py-3 font-mono text-teal-200/90">{q.orderId}</td>
                   <td className="px-4 py-3 text-slate-400">{q.workType}</td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-400">{q.technicianCode}</td>
                   <td className="px-4 py-3 text-white">{q.technicianName}</td>
@@ -421,7 +421,7 @@ export default function QualityPage() {
                     <button
                       type="button"
                       onClick={() => void openGallery(q)}
-                      className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                      className="rounded-lg border border-teal-400/35 bg-teal-400/10 px-3 py-1.5 text-xs font-medium text-teal-200 transition hover:bg-teal-400/18"
                     >
                       {t("qualityClickRow")}
                     </button>
@@ -436,7 +436,7 @@ export default function QualityPage() {
       {/* Mobile: compact cards, no images */}
       <div className="space-y-3 md:hidden">
         {items.length === 0 && (
-          <p className="rounded-3xl border border-dashed border-white/15 py-16 text-center text-slate-500">
+          <p className="rounded-3xl border border-dashed border-white/[0.1] py-16 text-center text-slate-500">
             {t("noData")}
           </p>
         )}
@@ -445,7 +445,7 @@ export default function QualityPage() {
           return (
             <article
               key={q.id}
-              className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 shadow-lg shadow-black/20"
+              className="ui-card-soft rounded-2xl p-4"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${b.className}`}>
@@ -453,7 +453,7 @@ export default function QualityPage() {
                 </span>
                 <span className="text-xs text-slate-500">{fmt(q.createdAt)}</span>
               </div>
-              <p className="mt-2 font-mono text-sm text-emerald-200/90">
+              <p className="mt-2 font-mono text-sm text-teal-200/90">
                 {t("filterOrderId")}: {q.orderId}
               </p>
               <p className="text-xs text-slate-400">{q.workType}</p>
@@ -468,7 +468,7 @@ export default function QualityPage() {
               <button
                 type="button"
                 onClick={() => void openGallery(q)}
-                className="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20"
+                className="mt-3 w-full rounded-xl border border-teal-400/35 bg-teal-400/10 py-2.5 text-sm font-medium text-teal-200 transition hover:bg-teal-400/18"
               >
                 {t("qualityClickRow")}
               </button>

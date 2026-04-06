@@ -67,17 +67,17 @@ export default function AttendancePage() {
         <button
           type="button"
           onClick={load}
-          className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
+          className="self-start rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30"
         >
           {t("retry")}
         </button>
       </div>
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
-      <div className="overflow-x-auto rounded-3xl border border-white/10 bg-slate-900/40 scrollbar-thin">
+      <div className="ui-table-wrap scrollbar-thin overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
               <th className="px-4 py-3 font-medium">{t("name")}</th>
               <th className="px-4 py-3 font-medium">{t("employeeCode")}</th>
               <th className="px-4 py-3 font-medium">{t("eventType")}</th>
@@ -96,13 +96,13 @@ export default function AttendancePage() {
             {items.map((row) => (
               <tr key={row.id} className="hover:bg-white/[0.03]">
                 <td className="px-4 py-3 font-medium text-white">{row.fullName}</td>
-                <td className="px-4 py-3 font-mono text-xs text-emerald-200/80">{row.employeeCode}</td>
+                <td className="px-4 py-3 font-mono text-xs text-teal-200/80">{row.employeeCode}</td>
                 <td className="px-4 py-3">{eventLabel(row.eventType)}</td>
                 <td className="px-4 py-3">
                   {row.eventType === "CHECK_IN" ? (
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        row.onTime ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-200"
+                        row.onTime ? "bg-teal-500/15 text-teal-200" : "bg-amber-500/15 text-amber-200"
                       }`}
                     >
                       {row.onTime ? t("onTime") : t("late")}

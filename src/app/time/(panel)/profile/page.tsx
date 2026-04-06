@@ -109,25 +109,25 @@ export default function ProfilePage() {
   );
 
   const inputClass =
-    "mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50";
+    "mt-1.5 w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2.5 text-sm text-white outline-none transition focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20";
 
   if (!employee) return null;
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">{t("profileTitle")}</h1>
-        <p className="mt-1 text-sm text-slate-400">{t("profileSubtitle")}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">{t("profileTitle")}</h1>
+        <p className="mt-1 text-sm leading-relaxed text-slate-500">{t("profileSubtitle")}</p>
       </div>
 
       {loadErr && <p className="text-sm text-rose-400">{loadErr}</p>}
       {loading && <p className="text-sm text-slate-500">{t("loading")}</p>}
 
       {!loading && !loadErr && (
-        <form onSubmit={submit} className="space-y-4 rounded-2xl border border-white/10 bg-slate-900/50 p-5 sm:p-6">
+        <form onSubmit={submit} className="ui-card space-y-4 p-5 sm:p-6">
           <div>
             <label className="text-xs font-medium text-slate-400">{t("company")}</label>
-            <p className="mt-1.5 rounded-xl border border-white/5 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-300">
+            <p className="mt-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-sm text-slate-400">
               {employee.companyName || "—"}
             </p>
           </div>
@@ -209,7 +209,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving || !fullName.trim()}
-            className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/20 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50"
           >
             {saving ? t("saving") : t("save")}
           </button>

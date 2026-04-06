@@ -78,7 +78,7 @@ export default function GeofencesPage() {
   }, [token, editItem, lat, lng, radius, load, closeEdit, t]);
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/50";
+    "mt-1 w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2 text-sm text-white outline-none focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20";
 
   return (
     <div className="space-y-6">
@@ -90,7 +90,7 @@ export default function GeofencesPage() {
         <button
           type="button"
           onClick={load}
-          className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
+          className="self-start rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30"
         >
           {t("retry")}
         </button>
@@ -99,16 +99,16 @@ export default function GeofencesPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {items.length === 0 && (
-          <p className="col-span-full rounded-3xl border border-dashed border-white/15 py-16 text-center text-slate-500">
+          <p className="col-span-full rounded-3xl border border-dashed border-white/[0.1] py-16 text-center text-slate-500">
             {t("noData")}
           </p>
         )}
         {items.map((g) => (
           <article
             key={g.geofenceKey}
-            className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg shadow-black/20"
+            className="ui-card-soft rounded-3xl p-5"
           >
-            <p className="font-mono text-sm font-semibold text-emerald-300">{g.geofenceKey}</p>
+            <p className="font-mono text-sm font-semibold text-teal-300">{g.geofenceKey}</p>
             <p className="mt-2 text-sm text-white">{g.officeName}</p>
             <p className="mt-3 text-xs text-slate-500">{t("office")}</p>
             <p className="text-sm text-slate-300">{g.officeId.slice(0, 8)}…</p>
@@ -121,7 +121,7 @@ export default function GeofencesPage() {
             <button
               type="button"
               onClick={() => openEdit(g)}
-              className="mt-4 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20"
+              className="mt-4 w-full rounded-xl border border-teal-400/35 bg-teal-400/10 py-2 text-sm font-medium text-teal-200 transition hover:bg-teal-400/18"
             >
               {t("edit")}
             </button>
@@ -131,12 +131,12 @@ export default function GeofencesPage() {
 
       {editItem && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-4 backdrop-blur-sm sm:items-center"
           role="dialog"
           aria-modal
           aria-labelledby="gf-edit-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl">
+          <div className="ui-modal w-full max-w-md p-5">
             <h2 id="gf-edit-title" className="text-lg font-semibold text-white">
               {t("editGeofence")}
             </h2>
@@ -179,7 +179,7 @@ export default function GeofencesPage() {
               <button
                 type="button"
                 onClick={closeEdit}
-                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-white/25"
+                className="rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 transition hover:border-white/[0.15]"
               >
                 {t("cancel")}
               </button>
@@ -187,7 +187,7 @@ export default function GeofencesPage() {
                 type="button"
                 disabled={saving}
                 onClick={() => void submitEdit()}
-                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/20 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50"
               >
                 {saving ? t("saving") : t("save")}
               </button>
