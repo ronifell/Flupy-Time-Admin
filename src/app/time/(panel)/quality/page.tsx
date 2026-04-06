@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
@@ -60,7 +61,10 @@ function CalendarDateField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const openPicker = () => {
+  /** `showPicker()` throws on `readOnly` date inputs (HTML spec). Icon must use a mutable input. */
+  const openPicker = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const el = inputRef.current;
     if (!el) return;
     const anyEl = el as HTMLInputElement & { showPicker?: () => void };
@@ -69,10 +73,10 @@ function CalendarDateField({
         anyEl.showPicker();
         return;
       } catch {
-        /* secure context / browser policy */
+        /* older browsers / non-secure context */
       }
     }
-    el.focus();
+    el.focus({ preventScroll: true });
     el.click();
   };
 
@@ -86,20 +90,14 @@ function CalendarDateField({
           ref={inputRef}
           id={id}
           type="date"
-          readOnly
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Tab" || e.key === "Escape") return;
-            e.preventDefault();
-          }}
           autoComplete="off"
-          onClick={openPicker}
-          className="calendar-picker-input min-h-[44px] flex-1 cursor-pointer rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30"
+          className="calendar-picker-input min-h-[44px] flex-1 rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30"
         />
         <button
           type="button"
-          onClick={openPicker}
+          onClick={(e) => openPicker(e)}
           aria-label={openLabel}
           title={openLabel}
           className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900 text-emerald-400 transition hover:border-emerald-500/40 hover:bg-slate-800 hover:text-emerald-300"
