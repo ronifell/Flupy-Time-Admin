@@ -205,13 +205,22 @@ export default function QualityPage() {
       try {
         const detail = await apiFetch<{
           id: string;
-          photos: { id: string; photoUrl: string; photoType: string; inspectorDecision?: string }[];
+          photos: {
+            id: string;
+            photoUrl: string;
+            photoType: string;
+            inspectorDecision?: string;
+            fe?: boolean;
+            feComment?: string | null;
+          }[];
         }>(`/admin/quality/${q.id}`, { token });
         const photos = (detail.photos || []).map((p) => ({
           id: p.id,
           photoUrl: p.photoUrl,
           photoType: p.photoType,
-          inspectorDecision: String(p.inspectorDecision || "NONE").toUpperCase()
+          inspectorDecision: String(p.inspectorDecision || "NONE").toUpperCase(),
+          fe: Boolean(p.fe),
+          feComment: p.feComment ?? null
         }));
         if (!photos.length) {
           setErr(t("qualityNoPhotos"));

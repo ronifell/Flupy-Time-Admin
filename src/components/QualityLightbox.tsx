@@ -9,6 +9,10 @@ export type LightboxPhoto = {
   photoUrl: string;
   photoType?: string;
   inspectorDecision?: string;
+  /** Employee marked this photo as out of standard at upload (FE). */
+  fe?: boolean;
+  /** Mandatory technician comment when out of standard; visible to administrators. */
+  feComment?: string | null;
 };
 
 type Props = {
@@ -47,6 +51,8 @@ export function QualityLightbox({
   const photo = photos[index];
   const url = photo ? mediaUrl(photo.photoUrl) : "";
   const badge = photo ? decisionBadge(t, photo.inspectorDecision) : { label: "", className: "" };
+  const employeeComment = photo?.feComment?.trim() ?? "";
+  const showTechnicianNonCompliance = Boolean(photo?.fe) || employeeComment.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -150,6 +156,19 @@ export function QualityLightbox({
           </button>
         </div>
       </div>
+
+      {showTechnicianNonCompliance && (
+        <div className="border-b border-amber-500/20 bg-amber-950/35 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-200/90">
+            {t("qualityTechnicianNonCompliance")}
+          </p>
+          {employeeComment ? (
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-amber-50/95">{employeeComment}</p>
+          ) : (
+            <p className="mt-2 text-xs text-rose-300/90">{t("qualityTechnicianCommentMissing")}</p>
+          )}
+        </div>
+      )}
 
       <div
         className="relative flex flex-1 cursor-grab items-center justify-center overflow-hidden active:cursor-grabbing"

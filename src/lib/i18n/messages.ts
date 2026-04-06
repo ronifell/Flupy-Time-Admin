@@ -101,6 +101,8 @@ export const messages: Record<
     qualityNoPhotos: "This order has no photos yet.",
     qualityPhotoNotReviewed: "Not reviewed",
     qualityPerPhotoHint: "OK, FE, and ERROR apply only to the photo you are viewing.",
+    qualityTechnicianNonCompliance: "Out of standard — technician comment",
+    qualityTechnicianCommentMissing: "This photo was flagged as out of standard but has no stored comment.",
     filterFromDate: "From date",
     filterToDate: "To date",
     filterEmployee: "Employee",
@@ -278,6 +280,9 @@ export const messages: Record<
     qualityNoPhotos: "Esta orden aún no tiene fotos.",
     qualityPhotoNotReviewed: "Sin revisar",
     qualityPerPhotoHint: "OK, FE y ERROR solo aplican a la foto que está viendo.",
+    qualityTechnicianNonCompliance: "Fuera de estándar — comentario del técnico",
+    qualityTechnicianCommentMissing:
+      "Esta foto fue marcada fuera de estándar pero no hay comentario guardado.",
     filterFromDate: "Desde fecha",
     filterToDate: "Hasta fecha",
     filterEmployee: "Empleado",

@@ -2,6 +2,9 @@
 
 import { useI18n } from "@/lib/i18n";
 
+const POWERBI_REPORT_SRC =
+  "https://app.powerbi.com/reportEmbed?reportId=40001e66-6339-4f68-a12d-0422a003226a&autoAuth=true&ctid=91531cf5-4884-46b5-bc65-43a9026d25f1&actionBarEnabled=true";
+
 export default function ReportsPage() {
   const { t } = useI18n();
 
@@ -12,18 +15,19 @@ export default function ReportsPage() {
         <p className="mt-1 text-sm leading-relaxed text-slate-500">{t("reportsSubtitle")}</p>
       </div>
 
-      <div className="ui-card rounded-3xl p-6">
-        <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-teal-400/20 bg-gradient-to-b from-white/[0.03] to-transparent p-8 text-center">
-          <p className="max-w-lg text-sm leading-relaxed text-slate-500">{t("reportsPlaceholder")}</p>
+      <div className="ui-card rounded-3xl p-4 sm:p-6">
+        <div className="relative w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-slate-950">
           <div
-            className="mt-8 w-full max-w-3xl rounded-xl border border-white/[0.06] bg-[rgba(3,6,14,0.5)] p-4 text-left text-xs text-slate-600"
-            dangerouslySetInnerHTML={{
-              __html: `<!-- Power BI / HTML embed area -->
-<div style="padding:24px;border-radius:12px;background:rgba(8,12,22,0.9);color:#64748b;font-family:system-ui;border:1px solid rgba(255,255,255,0.06)">
-  <strong style="color:#2dd4bf">Flupy Time</strong> · ${t("reportsTitle")}
-</div>`
-            }}
-          />
+            className="relative w-full min-h-[260px]"
+            style={{ aspectRatio: "1140 / 541.25" }}
+          >
+            <iframe
+              title="Control de Asistencia Voz srl"
+              src={POWERBI_REPORT_SRC}
+              className="absolute inset-0 h-full w-full border-0"
+              allowFullScreen
+            />
+          </div>
         </div>
       </div>
     </div>
