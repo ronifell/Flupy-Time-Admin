@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flupy Time · Admin panel
 
-## Getting Started
+Next.js admin UI for Flupy Time (connects to the existing Ponches / Flupy API).
 
-First, run the development server:
+## Requirements
+
+- **Node.js 20+** (required for Tailwind CSS v4 / `@tailwindcss/oxide` native bindings)
+- `NEXT_PUBLIC_API_URL` — public API origin, no trailing slash (e.g. `https://api.flupy.io`)
+
+## Local development
 
 ```bash
+cp .env.local.example .env.local
+# Edit NEXT_PUBLIC_API_URL
+
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Production build (Linux VPS)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+If `npm run build` fails with **Cannot find native binding** (`@tailwindcss/oxide`) or **EBADENGINE**:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Upgrade Node to 20 LTS** (Debian/Ubuntu example):
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+node -v   # should show v20.x
+```
+
+2. **Clean install** (fixes npm optional-dependency issues on Linux):
+
+```bash
+cd /var/www/Flupy-Time-Admin   # or your clone path
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+3. Run:
+
+```bash
+npm start
+# or e.g. PORT=3000 pm2 start npm --name flupy-admin -- start
+```
+
+Use `.env` or `.env.production` on the server with `NEXT_PUBLIC_API_URL=...` before `npm run build` so the value is baked into the client bundle.
+
+## Scripts
+
+| Command           | Description              |
+|-------------------|--------------------------|
+| `npm run dev`     | Development server       |
+| `npm run build`   | Production build         |
+| `npm run start`   | Start production server  |
+| `npm run clean`   | Remove `.next`           |
+| `npm run build:clean` | Clean + build        |
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs)
