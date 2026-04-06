@@ -1,10 +1,10 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
-import { apiFetch, ApiError, mediaUrl } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
 import { QualityLightbox, type LightboxPhoto } from "@/components/QualityLightbox";
 
 type QItem = {
@@ -18,7 +18,6 @@ type QItem = {
   technicianCode: string;
   photoCount: number;
   anyFe: boolean;
-  firstPhotoUrl: string | null;
   createdAt: string;
 };
 
@@ -43,12 +42,18 @@ function buildQualityQuery(
   fromDate: string,
   toDate: string,
   userId: string,
+  employeeCode: string,
+  orderId: string,
   uiStatus: QualityUiStatusFilter
 ): string {
   const qs = new URLSearchParams();
   if (fromDate) qs.set("fromDate", fromDate);
   if (toDate) qs.set("toDate", toDate);
   if (userId) qs.set("employeeId", userId);
+  const code = employeeCode.trim();
+  if (code) qs.set("employeeCode", code);
+  const ord = orderId.trim();
+  if (ord) qs.set("orderId", ord);
   if (uiStatus) qs.set("uiStatus", uiStatus);
   const q = qs.toString();
   return q ? `?${q}` : "";
@@ -69,7 +74,6 @@ function CalendarDateField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /** `showPicker()` throws on `readOnly` date inputs (HTML spec). Icon must use a mutable input. */
   const openPicker = (e?: MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -133,6 +137,8 @@ export default function QualityPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [filterUserId, setFilterUserId] = useState("");
+  const [filterEmployeeCode, setFilterEmployeeCode] = useState("");
+  const [filterOrderId, setFilterOrderId] = useState("");
   const [filterUiStatus, setFilterUiStatus] = useState<QualityUiStatusFilter>("");
   const [lightbox, setLightbox] = useState<{
     qualityId: string;
@@ -141,13 +147,19 @@ export default function QualityPage() {
   } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  /** Always pass dates/user explicitly — avoids stale defaults from useCallback closures. */
   const fetchItems = useCallback(
-    async (from: string, to: string, user: string, status: QualityUiStatusFilter) => {
+    async (
+      from: string,
+      to: string,
+      user: string,
+      employeeCode: string,
+      orderId: string,
+      status: QualityUiStatusFilter
+    ) => {
       if (!token) return;
       setErr(null);
       try {
-        const query = buildQualityQuery(from, to, user, status);
+        const query = buildQualityQuery(from, to, user, employeeCode, orderId, status);
         const data = await apiFetch<{ items: QItem[] }>(`/admin/quality/items${query}`, { token });
         setItems(data.items || []);
       } catch (e) {
@@ -160,10 +172,9 @@ export default function QualityPage() {
   const fetchItemsRef = useRef(fetchItems);
   fetchItemsRef.current = fetchItems;
 
-  /** Only when `token` appears — not when `fetchItems` identity changes (e.g. locale), or Apply would be overwritten by an unfiltered reload. */
   useEffect(() => {
     if (!token) return;
-    void fetchItemsRef.current("", "", "", "");
+    void fetchItemsRef.current("", "", "", "", "", "");
   }, [token]);
 
   useEffect(() => {
@@ -174,20 +185,23 @@ export default function QualityPage() {
   }, [token]);
 
   const applyFilters = useCallback(() => {
-    void fetchItems(fromDate, toDate, filterUserId, filterUiStatus);
-  }, [fetchItems, fromDate, toDate, filterUserId, filterUiStatus]);
+    void fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus);
+  }, [fetchItems, fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus]);
 
   const clearFilters = useCallback(() => {
     setFromDate("");
     setToDate("");
     setFilterUserId("");
+    setFilterEmployeeCode("");
+    setFilterOrderId("");
     setFilterUiStatus("");
-    void fetchItems("", "", "", "");
+    void fetchItems("", "", "", "", "", "");
   }, [fetchItems]);
 
   const openGallery = useCallback(
     async (q: QItem) => {
       if (!token) return;
+      setErr(null);
       try {
         const detail = await apiFetch<{
           id: string;
@@ -198,7 +212,10 @@ export default function QualityPage() {
           photoUrl: p.photoUrl,
           photoType: p.photoType
         }));
-        if (!photos.length) return;
+        if (!photos.length) {
+          setErr(t("qualityNoPhotos"));
+          return;
+        }
         setLightbox({ qualityId: detail.id, photos, index: 0 });
       } catch {
         setErr(t("errorLoad"));
@@ -218,17 +235,15 @@ export default function QualityPage() {
           body: JSON.stringify({ decision })
         });
         setLightbox(null);
-        await fetchItems(fromDate, toDate, filterUserId, filterUiStatus);
+        await fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus);
       } catch (e) {
         setErr(e instanceof ApiError ? e.message : t("errorLoad"));
       } finally {
         setBusy(false);
       }
     },
-    [token, lightbox, fetchItems, t, fromDate, toDate, filterUserId, filterUiStatus]
+    [token, lightbox, fetchItems, t, fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus]
   );
-
-  const sorted = useMemo(() => items, [items]);
 
   function fmt(iso: string) {
     try {
@@ -244,6 +259,9 @@ export default function QualityPage() {
     }
   }
 
+  const inputClass =
+    "mt-1.5 w-full min-h-[44px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500/50";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -253,7 +271,9 @@ export default function QualityPage() {
         </div>
         <button
           type="button"
-          onClick={() => void fetchItems(fromDate, toDate, filterUserId, filterUiStatus)}
+          onClick={() =>
+            void fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus)
+          }
           className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
         >
           {t("retry")}
@@ -261,7 +281,7 @@ export default function QualityPage() {
       </div>
 
       <section className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 sm:p-5">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:items-end">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <CalendarDateField
             id="quality-filter-from"
             label={t("filterFromDate")}
@@ -277,11 +297,33 @@ export default function QualityPage() {
             openLabel={`${t("openCalendar")} — ${t("filterToDate")}`}
           />
           <div>
+            <label className="block text-xs font-medium text-slate-400">{t("filterEmployeeCode")}</label>
+            <input
+              type="text"
+              value={filterEmployeeCode}
+              onChange={(e) => setFilterEmployeeCode(e.target.value)}
+              placeholder={t("filterEmployeeCodePlaceholder")}
+              autoComplete="off"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400">{t("filterOrderId")}</label>
+            <input
+              type="text"
+              value={filterOrderId}
+              onChange={(e) => setFilterOrderId(e.target.value)}
+              placeholder={t("filterOrderIdPlaceholder")}
+              autoComplete="off"
+              className={inputClass}
+            />
+          </div>
+          <div>
             <label className="block text-xs font-medium text-slate-400">{t("filterEmployee")}</label>
             <select
               value={filterUserId}
               onChange={(e) => setFilterUserId(e.target.value)}
-              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+              className={inputClass}
             >
               <option value="">{t("filterAllEmployees")}</option>
               {employees.map((e) => (
@@ -296,7 +338,7 @@ export default function QualityPage() {
             <select
               value={filterUiStatus}
               onChange={(e) => setFilterUiStatus(e.target.value as QualityUiStatusFilter)}
-              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+              className={inputClass}
             >
               <option value="">{t("filterStatusAll")}</option>
               <option value="IN_PROGRESS">{t("uiStatusInProgress")}</option>
@@ -305,7 +347,7 @@ export default function QualityPage() {
               <option value="OK">{t("uiStatusOk")}</option>
             </select>
           </div>
-          <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-1 xl:justify-end">
+          <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-2 xl:justify-end">
             <button
               type="button"
               onClick={applyFilters}
@@ -326,62 +368,99 @@ export default function QualityPage() {
 
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {sorted.length === 0 && (
-          <p className="col-span-full rounded-3xl border border-dashed border-white/15 py-16 text-center text-slate-500">
+      {/* Desktop: table — no thumbnails; open row to load photos */}
+      <div className="hidden overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/40 md:block">
+        <table className="w-full min-w-[880px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-3 font-medium">{t("filterStatus")}</th>
+              <th className="px-4 py-3 font-medium">{t("date")}</th>
+              <th className="px-4 py-3 font-medium">{t("filterOrderId")}</th>
+              <th className="px-4 py-3 font-medium">{t("workType")}</th>
+              <th className="px-4 py-3 font-medium">{t("filterEmployeeCode")}</th>
+              <th className="px-4 py-3 font-medium">{t("technician")}</th>
+              <th className="px-4 py-3 font-medium text-right">{t("qualityPhotoCount")}</th>
+              <th className="px-4 py-3 font-medium text-right">{t("actions")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5 text-slate-300">
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
+                  {t("noData")}
+                </td>
+              </tr>
+            )}
+            {items.map((q) => {
+              const b = badgeForItem(q, t);
+              return (
+                <tr key={q.id} className="hover:bg-white/[0.03]">
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${b.className}`}>
+                      {b.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-400">{fmt(q.createdAt)}</td>
+                  <td className="px-4 py-3 font-mono text-emerald-200/90">{q.orderId}</td>
+                  <td className="px-4 py-3 text-slate-400">{q.workType}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-400">{q.technicianCode}</td>
+                  <td className="px-4 py-3 text-white">{q.technicianName}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{q.photoCount}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => void openGallery(q)}
+                      className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                    >
+                      {t("qualityClickRow")}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: compact cards, no images */}
+      <div className="space-y-3 md:hidden">
+        {items.length === 0 && (
+          <p className="rounded-3xl border border-dashed border-white/15 py-16 text-center text-slate-500">
             {t("noData")}
           </p>
         )}
-        {sorted.map((q) => {
+        {items.map((q) => {
           const b = badgeForItem(q, t);
           return (
             <article
               key={q.id}
-              className="flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 shadow-lg shadow-black/25"
+              className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 shadow-lg shadow-black/20"
             >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${b.className}`}>
+                  {b.label}
+                </span>
+                <span className="text-xs text-slate-500">{fmt(q.createdAt)}</span>
+              </div>
+              <p className="mt-2 font-mono text-sm text-emerald-200/90">
+                {t("filterOrderId")}: {q.orderId}
+              </p>
+              <p className="text-xs text-slate-400">{q.workType}</p>
+              <div className="mt-2 border-t border-white/5 pt-2">
+                <p className="text-xs text-slate-500">
+                  {q.technicianName} · <span className="font-mono">{q.technicianCode}</span>
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {t("qualityPhotoCount")}: {q.photoCount}
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => openGallery(q)}
-                className="group relative aspect-[4/3] w-full overflow-hidden bg-slate-950 text-left"
+                onClick={() => void openGallery(q)}
+                className="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20"
               >
-                {q.firstPhotoUrl ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={mediaUrl(q.firstPhotoUrl)}
-                      alt=""
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent opacity-80 transition group-hover:opacity-95" />
-                    <span className="absolute bottom-3 left-3 right-3 text-xs font-medium text-white/90 drop-shadow">
-                      {q.photoCount} {t("photos")} · {t("openImage")}
-                    </span>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
-                    <span className="text-sm font-medium text-slate-500 group-hover:text-emerald-300/90">
-                      {q.photoCount} {t("photos").toLowerCase()} · {t("openImage")}
-                    </span>
-                  </div>
-                )}
+                {t("qualityClickRow")}
               </button>
-              <div className="flex flex-1 flex-col p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${b.className}`}>
-                    {b.label}
-                  </span>
-                  <span className="text-xs text-slate-500">{fmt(q.createdAt)}</span>
-                </div>
-                <p className="mt-2 font-mono text-sm text-emerald-200/90">
-                  {t("order")}: {q.orderId}
-                </p>
-                <p className="text-xs text-slate-400">{q.workType}</p>
-                <div className="mt-3 border-t border-white/5 pt-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">{t("technician")}</p>
-                  <p className="text-sm font-medium text-white">{q.technicianName}</p>
-                  <p className="font-mono text-xs text-slate-400">{q.technicianCode}</p>
-                </div>
-              </div>
             </article>
           );
         })}
