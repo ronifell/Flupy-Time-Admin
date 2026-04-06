@@ -11,6 +11,8 @@ export type AdminEmployee = {
   officeName?: string;
   /** Present after login or profile load when available */
   email?: string | null;
+  /** Non-empty → admin panel lists are limited to this operational region */
+  region?: string | null;
 };
 
 export function getStoredToken(): string | null {

@@ -14,6 +14,7 @@ type EmpDetail = {
   fullName: string;
   email: string | null;
   role: string;
+  region: string | null;
 };
 
 export default function ProfilePage() {
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const { token, employee, setAuth } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [region, setRegion] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export default function ProfilePage() {
       const data = await apiFetch<EmpDetail>(`/employees/${id}`, { token });
       setFullName(data.fullName || "");
       setEmail(data.email || "");
+      setRegion(data.region != null ? String(data.region) : "");
     } catch (e) {
       setLoadErr(e instanceof ApiError ? e.message : t("errorLoad"));
     } finally {
@@ -83,6 +86,9 @@ export default function ProfilePage() {
           email: email.trim() ? email.trim() : null
         };
         if (pw) body.password = pw;
+        if (employee.role === "ADMIN") {
+          body.region = region.trim() ? region.trim() : null;
+        }
 
         await apiFetch(`/employees/${employee.id}`, {
           method: "PUT",
@@ -93,7 +99,8 @@ export default function ProfilePage() {
         const next: AdminEmployee = {
           ...employee,
           fullName: fullName.trim(),
-          email: email.trim() ? email.trim() : null
+          email: email.trim() ? email.trim() : null,
+          region: employee.role === "ADMIN" ? (region.trim() ? region.trim() : null) : employee.region
         };
         setAuth(token, next);
         setPassword("");
@@ -105,7 +112,7 @@ export default function ProfilePage() {
         setSaving(false);
       }
     },
-    [token, employee, fullName, email, password, passwordConfirm, setAuth, t]
+    [token, employee, fullName, email, region, password, passwordConfirm, setAuth, t]
   );
 
   const inputClass =
@@ -173,6 +180,24 @@ export default function ProfilePage() {
               className={inputClass}
             />
           </div>
+
+          {employee.role === "ADMIN" && (
+            <div>
+              <label htmlFor="profile-region" className="text-xs font-medium text-slate-400">
+                {t("profileRegionLabel")}
+              </label>
+              <input
+                id="profile-region"
+                type="text"
+                autoComplete="off"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                className={inputClass}
+                placeholder={t("profileRegionPlaceholder")}
+              />
+              <p className="mt-1 text-[11px] text-slate-500">{t("profileRegionHint")}</p>
+            </div>
+          )}
 
           <div>
             <label htmlFor="profile-password" className="text-xs font-medium text-slate-400">

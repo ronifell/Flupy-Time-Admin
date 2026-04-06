@@ -5,7 +5,13 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api";
 
-type Emp = { id: string; employeeCode: string; fullName: string; role: string };
+type Emp = {
+  id: string;
+  employeeCode: string;
+  fullName: string;
+  role: string;
+  region?: string | null;
+};
 
 type EmpDetail = {
   id: string;
@@ -17,6 +23,7 @@ type EmpDetail = {
   employeeType: string;
   supervisorId: string | null;
   isSupervisor: boolean;
+  region: string | null;
 };
 
 type GfOpt = { geofenceKey: string; officeName: string };
@@ -36,9 +43,11 @@ function roleLabel(t: (k: string) => string, role: string) {
 
 export default function EmployeesPage() {
   const { t } = useI18n();
-  const { token } = useAuth();
+  const { token, employee: authEmployee } = useAuth();
   const [items, setItems] = useState<Emp[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchApplied, setSearchApplied] = useState("");
   const [geofences, setGeofences] = useState<GfOpt[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [detail, setDetail] = useState<EmpDetail | null>(null);
@@ -52,20 +61,29 @@ export default function EmployeesPage() {
     geofenceKey: "",
     supervisorId: "",
     isSupervisor: false,
-    password: ""
+    password: "",
+    region: ""
   });
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  const scopedRegion = useMemo(() => {
+    const r = authEmployee?.region;
+    return r != null && String(r).trim() !== "" ? String(r).trim() : null;
+  }, [authEmployee?.region]);
 
   const load = useCallback(async () => {
     if (!token) return;
     setErr(null);
     try {
-      const data = await apiFetch<{ items: Emp[] }>("/employees", { token });
+      const qs = new URLSearchParams();
+      if (searchApplied.trim()) qs.set("search", searchApplied.trim());
+      const q = qs.toString();
+      const data = await apiFetch<{ items: Emp[] }>(`/employees${q ? `?${q}` : ""}`, { token });
       setItems(data.items || []);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : t("errorLoad"));
     }
-  }, [token, t]);
+  }, [token, t, searchApplied]);
 
   useEffect(() => {
     load();
@@ -98,7 +116,8 @@ export default function EmployeesPage() {
           geofenceKey: empData.geofenceKey || "",
           supervisorId: empData.supervisorId || "",
           isSupervisor: empData.isSupervisor,
-          password: ""
+          password: "",
+          region: empData.region || ""
         });
       } catch (e) {
         setLoadDetailErr(e instanceof ApiError ? e.message : t("errorLoad"));
@@ -132,6 +151,9 @@ export default function EmployeesPage() {
         geofenceKey: form.geofenceKey.trim() || null,
         isSupervisor: form.isSupervisor
       };
+      if (!scopedRegion) {
+        body.region = form.region.trim() ? form.region.trim() : null;
+      }
       if (form.role === "EMPLOYEE") {
         if (!form.supervisorId) {
           setSaveMsg(t("selectSupervisor"));
@@ -155,7 +177,7 @@ export default function EmployeesPage() {
     } finally {
       setSaving(false);
     }
-  }, [token, editId, form, t, load, closeEdit]);
+  }, [token, editId, form, t, load, closeEdit, scopedRegion]);
 
   const inputClass =
     "mt-1 w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2 text-sm text-white outline-none focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20";
@@ -166,6 +188,11 @@ export default function EmployeesPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">{t("employeesTitle")}</h1>
           <p className="mt-1 text-sm text-slate-400">{t("employeesSubtitle")}</p>
+          {scopedRegion && (
+            <p className="mt-2 text-xs text-amber-200/90">
+              {t("employeesScopedBanner", { region: scopedRegion })}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -177,12 +204,39 @@ export default function EmployeesPage() {
       </div>
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
+      <div className="ui-card flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <label htmlFor="emp-search" className="block text-xs font-medium text-slate-400">
+            {t("employeesSearchPlaceholder")}
+          </label>
+          <input
+            id="emp-search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setSearchApplied(searchInput);
+              }
+            }}
+            className="mt-1.5 w-full rounded-xl border border-white/[0.1] bg-[rgba(3,6,14,0.65)] px-3 py-2.5 text-sm text-white outline-none focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/20"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setSearchApplied(searchInput)}
+          className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/20 transition hover:from-teal-400 hover:to-emerald-400"
+        >
+          {t("employeesSearchApply")}
+        </button>
+      </div>
+
       <div className="ui-table-wrap scrollbar-thin overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead>
             <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
               <th className="px-4 py-3 font-medium">{t("employeeCode")}</th>
               <th className="px-4 py-3 font-medium">{t("name")}</th>
+              <th className="px-4 py-3 font-medium">{t("employeesRegion")}</th>
               <th className="px-4 py-3 font-medium">{t("role")}</th>
               <th className="px-4 py-3 font-medium text-right">{t("actions")}</th>
             </tr>
@@ -190,7 +244,7 @@ export default function EmployeesPage() {
           <tbody className="divide-y divide-white/5 text-slate-300">
             {items.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                   {t("noData")}
                 </td>
               </tr>
@@ -199,6 +253,9 @@ export default function EmployeesPage() {
               <tr key={e.id} className="hover:bg-white/[0.03]">
                 <td className="px-4 py-3 font-mono text-teal-200/90">{e.employeeCode}</td>
                 <td className="px-4 py-3 font-medium text-white">{e.fullName}</td>
+                <td className="max-w-[140px] truncate px-4 py-3 text-slate-400" title={e.region || ""}>
+                  {e.region || "—"}
+                </td>
                 <td className="px-4 py-3 text-slate-400">{roleLabel(t, e.role)}</td>
                 <td className="px-4 py-3 text-right">
                   <button
@@ -252,6 +309,16 @@ export default function EmployeesPage() {
                       value={form.email}
                       onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                     />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-400">{t("employeesRegion")}</label>
+                    <input
+                      className={inputClass}
+                      value={scopedRegion ? scopedRegion : form.region}
+                      disabled={!!scopedRegion}
+                      onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
+                    />
+                    <p className="mt-1 text-[11px] text-slate-500">{t("employeesRegionHint")}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-400">{t("role")}</label>
