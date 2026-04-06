@@ -3,7 +3,7 @@
 import { useI18n } from "@/lib/i18n";
 
 const POWERBI_REPORT_SRC =
-  "https://app.powerbi.com/reportEmbed?reportId=40001e66-6339-4f68-a12d-0422a003226a&autoAuth=true&ctid=91531cf5-4884-46b5-bc65-43a9026d25f1&actionBarEnabled=true";
+  "https://app.powerbi.com/view?r=eyJrIjoiYzdhMzQ3MWItZjhmMS00Zjk0LWE1M2YtYjZlM2U4OTI1YmJhIiwidCI6IjkxNTMxY2Y1LTQ4ODQtNDZiNS1iYzY1LTQzYTkwMjZkMjVmMSIsImMiOjJ9&pageName=6631277f7227c153f0fd";
 
 export default function ReportsPage() {
   const { t } = useI18n();
@@ -18,8 +18,8 @@ export default function ReportsPage() {
       <div className="ui-card rounded-3xl p-4 sm:p-6">
         <div className="relative w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-slate-950">
           <div
-            className="relative w-full min-h-[260px]"
-            style={{ aspectRatio: "1140 / 541.25" }}
+            className="relative w-full min-h-[280px]"
+            style={{ aspectRatio: "800 / 636" }}
           >
             <iframe
               title="Control de Asistencia Voz srl"
