@@ -26,10 +26,22 @@ export async function apiFetch<T>(
   const { token, headers, ...rest } = options;
   const url = path.startsWith("http") ? path : `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
   const h = new Headers(headers);
-  h.set("Content-Type", "application/json");
+  const method = (rest.method || "GET").toUpperCase();
+  const hasJsonBody =
+    rest.body != null &&
+    typeof rest.body === "string" &&
+    method !== "GET" &&
+    method !== "HEAD";
+  if (hasJsonBody) {
+    h.set("Content-Type", "application/json");
+  }
   if (token) h.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(url, { ...rest, headers: h });
+  const res = await fetch(url, {
+    ...rest,
+    headers: h,
+    cache: rest.cache ?? "no-store"
+  });
   const text = await res.text();
   let data: unknown = null;
   try {

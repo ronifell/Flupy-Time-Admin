@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError, mediaUrl } from "@/lib/api";
@@ -8,6 +8,7 @@ import { QualityLightbox, type LightboxPhoto } from "@/components/QualityLightbo
 
 type QItem = {
   id: string;
+  userId: string;
   orderId: string;
   workType: string;
   status: string;
@@ -19,6 +20,8 @@ type QItem = {
   firstPhotoUrl: string | null;
   createdAt: string;
 };
+
+type EmpOption = { id: string; employeeCode: string; fullName: string };
 
 function badgeForItem(item: QItem, t: (k: string) => string) {
   if (item.status === "APPROVED" || item.inspectorDecision === "OK") {
@@ -33,11 +36,97 @@ function badgeForItem(item: QItem, t: (k: string) => string) {
   return { label: t("uiStatusInProgress"), className: "bg-sky-500/10 text-sky-200 ring-sky-500/25" };
 }
 
+function buildQualityQuery(fromDate: string, toDate: string, userId: string): string {
+  const qs = new URLSearchParams();
+  if (fromDate) qs.set("fromDate", fromDate);
+  if (toDate) qs.set("toDate", toDate);
+  if (userId) qs.set("employeeId", userId);
+  const q = qs.toString();
+  return q ? `?${q}` : "";
+}
+
+function CalendarDateField({
+  id,
+  label,
+  value,
+  onChange,
+  openLabel
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  openLabel: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    const anyEl = el as HTMLInputElement & { showPicker?: () => void };
+    if (typeof anyEl.showPicker === "function") {
+      try {
+        anyEl.showPicker();
+        return;
+      } catch {
+        /* secure context / browser policy */
+      }
+    }
+    el.focus();
+    el.click();
+  };
+
+  return (
+    <div>
+      <label htmlFor={id} className="block text-xs font-medium text-slate-400">
+        {label}
+      </label>
+      <div className="relative mt-1.5 flex items-stretch gap-2">
+        <input
+          ref={inputRef}
+          id={id}
+          type="date"
+          readOnly
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Tab" || e.key === "Escape") return;
+            e.preventDefault();
+          }}
+          autoComplete="off"
+          onClick={openPicker}
+          className="calendar-picker-input min-h-[44px] flex-1 cursor-pointer rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30"
+        />
+        <button
+          type="button"
+          onClick={openPicker}
+          aria-label={openLabel}
+          title={openLabel}
+          className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900 text-emerald-400 transition hover:border-emerald-500/40 hover:bg-slate-800 hover:text-emerald-300"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M7 3v2M17 3v2M4 9h16M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function QualityPage() {
   const { t, locale } = useI18n();
   const { token } = useAuth();
   const [items, setItems] = useState<QItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<EmpOption[]>([]);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [filterUserId, setFilterUserId] = useState("");
   const [lightbox, setLightbox] = useState<{
     qualityId: string;
     photos: LightboxPhoto[];
@@ -45,20 +134,48 @@ export default function QualityPage() {
   } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
+  /** Always pass dates/user explicitly — avoids stale defaults from useCallback closures. */
+  const fetchItems = useCallback(
+    async (from: string, to: string, user: string) => {
+      if (!token) return;
+      setErr(null);
+      try {
+        const query = buildQualityQuery(from, to, user);
+        const data = await apiFetch<{ items: QItem[] }>(`/admin/quality/items${query}`, { token });
+        setItems(data.items || []);
+      } catch (e) {
+        setErr(e instanceof ApiError ? e.message : t("errorLoad"));
+      }
+    },
+    [token, t]
+  );
+
+  const fetchItemsRef = useRef(fetchItems);
+  fetchItemsRef.current = fetchItems;
+
+  /** Only when `token` appears — not when `fetchItems` identity changes (e.g. locale), or Apply would be overwritten by an unfiltered reload. */
+  useEffect(() => {
     if (!token) return;
-    setErr(null);
-    try {
-      const data = await apiFetch<{ items: QItem[] }>("/admin/quality/items", { token });
-      setItems(data.items || []);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : t("errorLoad"));
-    }
-  }, [token, t]);
+    void fetchItemsRef.current("", "", "");
+  }, [token]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!token) return;
+    apiFetch<{ items: EmpOption[] }>("/employees", { token })
+      .then((d) => setEmployees(d.items || []))
+      .catch(() => setEmployees([]));
+  }, [token]);
+
+  const applyFilters = useCallback(() => {
+    void fetchItems(fromDate, toDate, filterUserId);
+  }, [fetchItems, fromDate, toDate, filterUserId]);
+
+  const clearFilters = useCallback(() => {
+    setFromDate("");
+    setToDate("");
+    setFilterUserId("");
+    void fetchItems("", "", "");
+  }, [fetchItems]);
 
   const openGallery = useCallback(
     async (q: QItem) => {
@@ -93,14 +210,14 @@ export default function QualityPage() {
           body: JSON.stringify({ decision })
         });
         setLightbox(null);
-        await load();
+        await fetchItems(fromDate, toDate, filterUserId);
       } catch (e) {
         setErr(e instanceof ApiError ? e.message : t("errorLoad"));
       } finally {
         setBusy(false);
       }
     },
-    [token, lightbox, load, t]
+    [token, lightbox, fetchItems, t, fromDate, toDate, filterUserId]
   );
 
   const sorted = useMemo(() => items, [items]);
@@ -128,12 +245,63 @@ export default function QualityPage() {
         </div>
         <button
           type="button"
-          onClick={load}
+          onClick={() => void fetchItems(fromDate, toDate, filterUserId)}
           className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
         >
           {t("retry")}
         </button>
       </div>
+
+      <section className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 sm:p-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+          <CalendarDateField
+            id="quality-filter-from"
+            label={t("filterFromDate")}
+            value={fromDate}
+            onChange={setFromDate}
+            openLabel={`${t("openCalendar")} — ${t("filterFromDate")}`}
+          />
+          <CalendarDateField
+            id="quality-filter-to"
+            label={t("filterToDate")}
+            value={toDate}
+            onChange={setToDate}
+            openLabel={`${t("openCalendar")} — ${t("filterToDate")}`}
+          />
+          <div className="sm:col-span-2 lg:col-span-1">
+            <label className="block text-xs font-medium text-slate-400">{t("filterEmployee")}</label>
+            <select
+              value={filterUserId}
+              onChange={(e) => setFilterUserId(e.target.value)}
+              className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+            >
+              <option value="">{t("filterAllEmployees")}</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.fullName} ({e.employeeCode})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-1 lg:justify-end">
+            <button
+              type="button"
+              onClick={applyFilters}
+              className="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+            >
+              {t("filterApply")}
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-slate-200 hover:border-emerald-500/40"
+            >
+              {t("filterClear")}
+            </button>
+          </div>
+        </div>
+      </section>
+
       {err && <p className="text-sm text-rose-400">{err}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
