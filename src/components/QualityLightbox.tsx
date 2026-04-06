@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mediaUrl } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
-export type LightboxPhoto = { id: string; photoUrl: string; photoType?: string };
+export type LightboxPhoto = {
+  id: string;
+  photoUrl: string;
+  photoType?: string;
+  inspectorDecision?: string;
+};
 
 type Props = {
   open: boolean;
@@ -12,9 +17,18 @@ type Props = {
   index: number;
   onClose: () => void;
   onIndexChange: (i: number) => void;
-  onDecision: (decision: "FE" | "ERROR" | "OK") => void;
+  /** Persists the decision for this photo only. Returns true if saved; lightbox advances to the next photo on success. */
+  onPhotoDecision: (photoId: string, decision: "FE" | "ERROR" | "OK") => Promise<boolean>;
   busy?: boolean;
 };
+
+function decisionBadge(t: (k: string) => string, d: string | undefined) {
+  const u = String(d || "NONE").toUpperCase();
+  if (u === "OK") return { label: t("uiStatusOk"), className: "text-emerald-300" };
+  if (u === "FE") return { label: t("uiStatusFe"), className: "text-amber-200" };
+  if (u === "ERROR") return { label: t("uiStatusError"), className: "text-rose-300" };
+  return { label: t("qualityPhotoNotReviewed"), className: "text-slate-500" };
+}
 
 export function QualityLightbox({
   open,
@@ -22,7 +36,7 @@ export function QualityLightbox({
   index,
   onClose,
   onIndexChange,
-  onDecision,
+  onPhotoDecision,
   busy
 }: Props) {
   const { t } = useI18n();
@@ -32,6 +46,7 @@ export function QualityLightbox({
 
   const photo = photos[index];
   const url = photo ? mediaUrl(photo.photoUrl) : "";
+  const badge = photo ? decisionBadge(t, photo.inspectorDecision) : { label: "", className: "" };
 
   useEffect(() => {
     if (!open) return;
@@ -56,6 +71,15 @@ export function QualityLightbox({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, index, photos.length, onClose, onIndexChange]);
 
+  const applyDecision = useCallback(
+    async (decision: "FE" | "ERROR" | "OK") => {
+      if (!photo) return;
+      const ok = await onPhotoDecision(photo.id, decision);
+      if (ok && index < photos.length - 1) onIndexChange(index + 1);
+    },
+    [photo, onPhotoDecision, index, photos.length, onIndexChange]
+  );
+
   if (!open || !photo) return null;
 
   return (
@@ -71,6 +95,7 @@ export function QualityLightbox({
           <span className="ml-2 text-slate-500">
             {index + 1} / {photos.length}
           </span>
+          <span className={`ml-2 font-medium ${badge.className}`}>· {badge.label}</span>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
           <button
@@ -163,11 +188,15 @@ export function QualityLightbox({
         {t("fullscreenHint")}
       </p>
 
+      <p className="border-t border-white/5 px-4 py-1.5 text-center text-[11px] text-slate-500">
+        {t("qualityPerPhotoHint")}
+      </p>
+
       <div className="flex flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-slate-950/90 px-4 py-3">
         <button
           type="button"
           disabled={busy}
-          onClick={() => onDecision("FE")}
+          onClick={() => void applyDecision("FE")}
           className="rounded-xl bg-amber-500/90 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg hover:bg-amber-400 disabled:opacity-50"
         >
           {t("actionFe")}
@@ -175,7 +204,7 @@ export function QualityLightbox({
         <button
           type="button"
           disabled={busy}
-          onClick={() => onDecision("ERROR")}
+          onClick={() => void applyDecision("ERROR")}
           className="rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-rose-500 disabled:opacity-50"
         >
           {t("actionError")}
@@ -183,7 +212,7 @@ export function QualityLightbox({
         <button
           type="button"
           disabled={busy}
-          onClick={() => onDecision("OK")}
+          onClick={() => void applyDecision("OK")}
           className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 disabled:opacity-50"
         >
           {t("actionOk")}

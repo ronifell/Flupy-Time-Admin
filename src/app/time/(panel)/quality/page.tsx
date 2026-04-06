@@ -205,12 +205,13 @@ export default function QualityPage() {
       try {
         const detail = await apiFetch<{
           id: string;
-          photos: { id: string; photoUrl: string; photoType: string }[];
+          photos: { id: string; photoUrl: string; photoType: string; inspectorDecision?: string }[];
         }>(`/admin/quality/${q.id}`, { token });
         const photos = (detail.photos || []).map((p) => ({
           id: p.id,
           photoUrl: p.photoUrl,
-          photoType: p.photoType
+          photoType: p.photoType,
+          inspectorDecision: String(p.inspectorDecision || "NONE").toUpperCase()
         }));
         if (!photos.length) {
           setErr(t("qualityNoPhotos"));
@@ -224,20 +225,30 @@ export default function QualityPage() {
     [token, t]
   );
 
-  const onDecision = useCallback(
-    async (decision: "FE" | "ERROR" | "OK") => {
-      if (!token || !lightbox) return;
+  const onPhotoDecision = useCallback(
+    async (photoId: string, decision: "FE" | "ERROR" | "OK"): Promise<boolean> => {
+      if (!token || !lightbox) return false;
       setBusy(true);
       try {
         await apiFetch(`/admin/quality/${lightbox.qualityId}/review`, {
           method: "PATCH",
           token,
-          body: JSON.stringify({ decision })
+          body: JSON.stringify({ photoId, decision })
         });
-        setLightbox(null);
+        setLightbox((s) => {
+          if (!s) return s;
+          return {
+            ...s,
+            photos: s.photos.map((p) =>
+              p.id === photoId ? { ...p, inspectorDecision: decision } : p
+            )
+          };
+        });
         await fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus);
+        return true;
       } catch (e) {
         setErr(e instanceof ApiError ? e.message : t("errorLoad"));
+        return false;
       } finally {
         setBusy(false);
       }
@@ -473,7 +484,7 @@ export default function QualityPage() {
           index={lightbox.index}
           onClose={() => setLightbox(null)}
           onIndexChange={(i) => setLightbox((s) => (s ? { ...s, index: i } : s))}
-          onDecision={onDecision}
+          onPhotoDecision={onPhotoDecision}
           busy={busy}
         />
       )}
