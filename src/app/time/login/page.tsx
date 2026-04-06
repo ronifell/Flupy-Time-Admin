@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/LogoMark";
 import { LangSwitch } from "@/components/LangSwitch";
+import { PasswordInput } from "@/components/PasswordInput";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api";
@@ -109,14 +110,16 @@ function LoginForm() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400">{t("password")}</label>
-            <input
-              required
-              type="password"
-              autoComplete="current-password"
+            <label htmlFor="login-password" className="block text-xs font-medium text-slate-400">
+              {t("password")}
+            </label>
+            <PasswordInput
+              id="login-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+              onChange={setPassword}
+              autoComplete="current-password"
+              required
+              disabled={loading}
             />
           </div>
           {error && <p className="text-sm text-rose-400">{error}</p>}

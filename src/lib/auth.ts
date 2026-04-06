@@ -9,6 +9,8 @@ export type AdminEmployee = {
   companyId: string;
   companyName?: string;
   officeName?: string;
+  /** Present after login or profile load when available */
+  email?: string | null;
 };
 
 export function getStoredToken(): string | null {

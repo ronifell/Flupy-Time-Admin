@@ -13,7 +13,8 @@ const nav = [
   { href: "/time/attendance", key: "navAttendance" },
   { href: "/time/quality", key: "navQuality" },
   { href: "/time/geofences", key: "navGeofences" },
-  { href: "/time/reports", key: "navReports" }
+  { href: "/time/reports", key: "navReports" },
+  { href: "/time/profile", key: "navProfile" }
 ];
 
 export function TimeShell({ children }: { children: React.ReactNode }) {
