@@ -37,11 +37,19 @@ function badgeForItem(item: QItem, t: (k: string) => string) {
   return { label: t("uiStatusInProgress"), className: "bg-sky-500/10 text-sky-200 ring-sky-500/25" };
 }
 
-function buildQualityQuery(fromDate: string, toDate: string, userId: string): string {
+type QualityUiStatusFilter = "" | "IN_PROGRESS" | "FE" | "ERROR" | "OK";
+
+function buildQualityQuery(
+  fromDate: string,
+  toDate: string,
+  userId: string,
+  uiStatus: QualityUiStatusFilter
+): string {
   const qs = new URLSearchParams();
   if (fromDate) qs.set("fromDate", fromDate);
   if (toDate) qs.set("toDate", toDate);
   if (userId) qs.set("employeeId", userId);
+  if (uiStatus) qs.set("uiStatus", uiStatus);
   const q = qs.toString();
   return q ? `?${q}` : "";
 }
@@ -125,6 +133,7 @@ export default function QualityPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [filterUserId, setFilterUserId] = useState("");
+  const [filterUiStatus, setFilterUiStatus] = useState<QualityUiStatusFilter>("");
   const [lightbox, setLightbox] = useState<{
     qualityId: string;
     photos: LightboxPhoto[];
@@ -134,11 +143,11 @@ export default function QualityPage() {
 
   /** Always pass dates/user explicitly — avoids stale defaults from useCallback closures. */
   const fetchItems = useCallback(
-    async (from: string, to: string, user: string) => {
+    async (from: string, to: string, user: string, status: QualityUiStatusFilter) => {
       if (!token) return;
       setErr(null);
       try {
-        const query = buildQualityQuery(from, to, user);
+        const query = buildQualityQuery(from, to, user, status);
         const data = await apiFetch<{ items: QItem[] }>(`/admin/quality/items${query}`, { token });
         setItems(data.items || []);
       } catch (e) {
@@ -154,7 +163,7 @@ export default function QualityPage() {
   /** Only when `token` appears — not when `fetchItems` identity changes (e.g. locale), or Apply would be overwritten by an unfiltered reload. */
   useEffect(() => {
     if (!token) return;
-    void fetchItemsRef.current("", "", "");
+    void fetchItemsRef.current("", "", "", "");
   }, [token]);
 
   useEffect(() => {
@@ -165,14 +174,15 @@ export default function QualityPage() {
   }, [token]);
 
   const applyFilters = useCallback(() => {
-    void fetchItems(fromDate, toDate, filterUserId);
-  }, [fetchItems, fromDate, toDate, filterUserId]);
+    void fetchItems(fromDate, toDate, filterUserId, filterUiStatus);
+  }, [fetchItems, fromDate, toDate, filterUserId, filterUiStatus]);
 
   const clearFilters = useCallback(() => {
     setFromDate("");
     setToDate("");
     setFilterUserId("");
-    void fetchItems("", "", "");
+    setFilterUiStatus("");
+    void fetchItems("", "", "", "");
   }, [fetchItems]);
 
   const openGallery = useCallback(
@@ -208,14 +218,14 @@ export default function QualityPage() {
           body: JSON.stringify({ decision })
         });
         setLightbox(null);
-        await fetchItems(fromDate, toDate, filterUserId);
+        await fetchItems(fromDate, toDate, filterUserId, filterUiStatus);
       } catch (e) {
         setErr(e instanceof ApiError ? e.message : t("errorLoad"));
       } finally {
         setBusy(false);
       }
     },
-    [token, lightbox, fetchItems, t, fromDate, toDate, filterUserId]
+    [token, lightbox, fetchItems, t, fromDate, toDate, filterUserId, filterUiStatus]
   );
 
   const sorted = useMemo(() => items, [items]);
@@ -243,7 +253,7 @@ export default function QualityPage() {
         </div>
         <button
           type="button"
-          onClick={() => void fetchItems(fromDate, toDate, filterUserId)}
+          onClick={() => void fetchItems(fromDate, toDate, filterUserId, filterUiStatus)}
           className="self-start rounded-xl border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-emerald-500/40"
         >
           {t("retry")}
@@ -251,7 +261,7 @@ export default function QualityPage() {
       </div>
 
       <section className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 sm:p-5">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:items-end">
           <CalendarDateField
             id="quality-filter-from"
             label={t("filterFromDate")}
@@ -266,12 +276,12 @@ export default function QualityPage() {
             onChange={setToDate}
             openLabel={`${t("openCalendar")} — ${t("filterToDate")}`}
           />
-          <div className="sm:col-span-2 lg:col-span-1">
+          <div>
             <label className="block text-xs font-medium text-slate-400">{t("filterEmployee")}</label>
             <select
               value={filterUserId}
               onChange={(e) => setFilterUserId(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
             >
               <option value="">{t("filterAllEmployees")}</option>
               {employees.map((e) => (
@@ -281,7 +291,21 @@ export default function QualityPage() {
               ))}
             </select>
           </div>
-          <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-1 lg:justify-end">
+          <div>
+            <label className="block text-xs font-medium text-slate-400">{t("filterStatus")}</label>
+            <select
+              value={filterUiStatus}
+              onChange={(e) => setFilterUiStatus(e.target.value as QualityUiStatusFilter)}
+              className="mt-1.5 w-full min-h-[44px] rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+            >
+              <option value="">{t("filterStatusAll")}</option>
+              <option value="IN_PROGRESS">{t("uiStatusInProgress")}</option>
+              <option value="FE">{t("uiStatusFe")}</option>
+              <option value="ERROR">{t("uiStatusError")}</option>
+              <option value="OK">{t("uiStatusOk")}</option>
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-1 xl:justify-end">
             <button
               type="button"
               onClick={applyFilters}

@@ -51,7 +51,10 @@ export function TimeShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-0 lg:flex-row">
-        <aside className="border-b border-white/10 bg-slate-900/40 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:min-h-[calc(100vh-57px)]">
+        <aside
+          className="sticky top-16 z-30 self-start border-b border-white/10 bg-slate-950/95 backdrop-blur-md lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto"
+          aria-label={t("sidebarTitle")}
+        >
           <div className="scrollbar-thin overflow-x-auto lg:overflow-x-visible">
             <div className="flex gap-2 p-3 lg:flex-col lg:gap-1">
               <div className="mb-2 flex items-start justify-between gap-2 px-2 lg:block">
