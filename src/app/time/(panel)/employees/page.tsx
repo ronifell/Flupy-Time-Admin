@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api";
+import { EMPLOYEE_REGIONS, normalizeEmployeeRegionFormValue } from "@/lib/employeeRegions";
 
 type Emp = {
   id: string;
@@ -117,7 +118,7 @@ export default function EmployeesPage() {
           supervisorId: empData.supervisorId || "",
           isSupervisor: empData.isSupervisor,
           password: "",
-          region: empData.region || ""
+          region: normalizeEmployeeRegionFormValue(empData.region)
         });
       } catch (e) {
         setLoadDetailErr(e instanceof ApiError ? e.message : t("errorLoad"));
@@ -312,12 +313,19 @@ export default function EmployeesPage() {
                   </div>
                   <div>
                     <label className="text-xs font-medium text-slate-400">{t("employeesRegion")}</label>
-                    <input
+                    <select
                       className={inputClass}
                       value={scopedRegion ? scopedRegion : form.region}
                       disabled={!!scopedRegion}
                       onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
-                    />
+                    >
+                      <option value="">{t("employeeRegionNone")}</option>
+                      {EMPLOYEE_REGIONS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
                     <p className="mt-1 text-[11px] text-slate-500">{t("employeesRegionHint")}</p>
                   </div>
                   <div>

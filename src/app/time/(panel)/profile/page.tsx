@@ -7,6 +7,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { Snackbar } from "@/components/Snackbar";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { AdminEmployee } from "@/lib/auth";
+import { EMPLOYEE_REGIONS, normalizeEmployeeRegionFormValue } from "@/lib/employeeRegions";
 
 type EmpDetail = {
   id: string;
@@ -41,7 +42,7 @@ export default function ProfilePage() {
       const data = await apiFetch<EmpDetail>(`/employees/${id}`, { token });
       setFullName(data.fullName || "");
       setEmail(data.email || "");
-      setRegion(data.region != null ? String(data.region) : "");
+      setRegion(normalizeEmployeeRegionFormValue(data.region));
     } catch (e) {
       setLoadErr(e instanceof ApiError ? e.message : t("errorLoad"));
     } finally {
@@ -186,15 +187,20 @@ export default function ProfilePage() {
               <label htmlFor="profile-region" className="text-xs font-medium text-slate-400">
                 {t("profileRegionLabel")}
               </label>
-              <input
+              <select
                 id="profile-region"
-                type="text"
                 autoComplete="off"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 className={inputClass}
-                placeholder={t("profileRegionPlaceholder")}
-              />
+              >
+                <option value="">{t("employeeRegionNone")}</option>
+                {EMPLOYEE_REGIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
               <p className="mt-1 text-[11px] text-slate-500">{t("profileRegionHint")}</p>
             </div>
           )}
