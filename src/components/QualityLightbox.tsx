@@ -67,7 +67,7 @@ export function QualityLightbox({
   }, [open, index]);
 
   useEffect(() => {
-    if (!open || !photoId || !qualityId || !token) {
+    if (!open || !photoId || !qualityId) {
       setBlobUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
@@ -86,7 +86,9 @@ export function QualityLightbox({
     setImgErr(false);
 
     const url = `${getApiBase()}/admin/quality/${qualityId}/photos/${photoId}/image`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+    const headers = new Headers();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    fetch(url, { headers, cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error("bad status");
         return res.blob();
