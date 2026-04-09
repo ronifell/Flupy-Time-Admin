@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { mediaUrl } from "@/lib/api";
+import { getApiBase } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 export type LightboxPhoto = {
@@ -17,6 +17,8 @@ export type LightboxPhoto = {
 
 type Props = {
   open: boolean;
+  qualityId: string;
+  token: string | null;
   photos: LightboxPhoto[];
   index: number;
   onClose: () => void;
@@ -36,6 +38,8 @@ function decisionBadge(t: (k: string) => string, d: string | undefined) {
 
 export function QualityLightbox({
   open,
+  qualityId,
+  token,
   photos,
   index,
   onClose,
@@ -47,9 +51,11 @@ export function QualityLightbox({
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const drag = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [imgErr, setImgErr] = useState(false);
 
   const photo = photos[index];
-  const url = photo ? mediaUrl(photo.photoUrl) : "";
+  const photoId = photo?.id;
   const badge = photo ? decisionBadge(t, photo.inspectorDecision) : { label: "", className: "" };
   const employeeComment = photo?.feComment?.trim() ?? "";
   const showTechnicianNonCompliance = Boolean(photo?.fe) || employeeComment.length > 0;
@@ -59,6 +65,46 @@ export function QualityLightbox({
     setScale(1);
     setPos({ x: 0, y: 0 });
   }, [open, index]);
+
+  useEffect(() => {
+    if (!open || !photoId || !qualityId || !token) {
+      setBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      setImgErr(false);
+      return;
+    }
+
+    let cancelled = false;
+    let created: string | null = null;
+
+    setBlobUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setImgErr(false);
+
+    const url = `${getApiBase()}/admin/quality/${qualityId}/photos/${photoId}/image`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) throw new Error("bad status");
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        created = URL.createObjectURL(blob);
+        setBlobUrl(created);
+      })
+      .catch(() => {
+        if (!cancelled) setImgErr(true);
+      });
+
+    return () => {
+      cancelled = true;
+      if (created) URL.revokeObjectURL(created);
+    };
+  }, [open, photoId, qualityId, token, index]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -190,17 +236,29 @@ export function QualityLightbox({
           drag.current = null;
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={url}
-          alt=""
-          className="max-h-[calc(100vh-180px)] max-w-full select-none object-contain shadow-2xl"
-          style={{
-            transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
-            transition: drag.current ? "none" : "transform 0.08s ease-out"
-          }}
-          draggable={false}
-        />
+        {imgErr && (
+          <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-center text-sm text-rose-300">
+            {t("qualityImageLoadError")}
+          </p>
+        )}
+        {!imgErr && !blobUrl && (
+          <p className="text-sm text-slate-500">{t("loading")}</p>
+        )}
+        {blobUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL from authenticated fetch */}
+            <img
+              src={blobUrl}
+              alt=""
+              className="max-h-[calc(100vh-180px)] max-w-full select-none object-contain shadow-2xl"
+              style={{
+                transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+                transition: drag.current ? "none" : "transform 0.08s ease-out"
+              }}
+              draggable={false}
+            />
+          </>
+        ) : null}
       </div>
 
       <p className="border-t border-white/[0.06] px-4 py-2 text-center text-[11px] text-slate-500">

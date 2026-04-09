@@ -120,6 +120,7 @@ export const messages: Record<
     qualityPerPhotoHint: "OK, FE, and ERROR apply only to the photo you are viewing.",
     qualityTechnicianNonCompliance: "Out of standard — technician comment",
     qualityTechnicianCommentMissing: "This photo was flagged as out of standard but has no stored comment.",
+    qualityImageLoadError: "Could not load this image (missing file or network error).",
     filterFromDate: "From date",
     filterToDate: "To date",
     filterEmployee: "Employee",
@@ -317,6 +318,7 @@ export const messages: Record<
     qualityTechnicianNonCompliance: "Fuera de estándar — comentario del técnico",
     qualityTechnicianCommentMissing:
       "Esta foto fue marcada fuera de estándar pero no hay comentario guardado.",
+    qualityImageLoadError: "No se pudo cargar la imagen (archivo ausente o error de red).",
     filterFromDate: "Desde fecha",
     filterToDate: "Hasta fecha",
     filterEmployee: "Empleado",

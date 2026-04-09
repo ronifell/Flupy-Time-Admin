@@ -420,6 +420,8 @@ export default function QualityPage() {
       {lightbox && (
         <QualityLightbox
           open
+          qualityId={lightbox.qualityId}
+          token={token}
           photos={lightbox.photos}
           index={lightbox.index}
           onClose={() => setLightbox(null)}
