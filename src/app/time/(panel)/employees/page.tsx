@@ -152,9 +152,7 @@ export default function EmployeesPage() {
         geofenceKey: form.geofenceKey.trim() || null,
         isSupervisor: form.isSupervisor
       };
-      if (!scopedRegion) {
-        body.region = form.region.trim() ? form.region.trim() : null;
-      }
+      body.region = form.region.trim() ? form.region.trim() : null;
       if (form.role === "EMPLOYEE") {
         if (!form.supervisorId) {
           setSaveMsg(t("selectSupervisor"));
@@ -315,8 +313,7 @@ export default function EmployeesPage() {
                     <label className="text-xs font-medium text-slate-400">{t("employeesRegion")}</label>
                     <select
                       className={inputClass}
-                      value={scopedRegion ? scopedRegion : form.region}
-                      disabled={!!scopedRegion}
+                      value={form.region}
                       onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
                     >
                       <option value="">{t("employeeRegionNone")}</option>
