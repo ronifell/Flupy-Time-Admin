@@ -108,7 +108,7 @@ export default function PortalPage() {
       </main>
 
       <footer className="border-t border-white/[0.06] py-8 text-center text-xs text-slate-600">
-        Flupy Time · Ponches
+        Flupy Time
       </footer>
     </div>
   );
