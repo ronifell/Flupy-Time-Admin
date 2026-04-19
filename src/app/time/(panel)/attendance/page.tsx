@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api";
 import { CalendarDateField } from "@/components/CalendarDateField";
+import { formatReportingDateTime } from "@/lib/timezone";
 
 type AttRow = {
   id: string;
@@ -77,18 +78,7 @@ export default function AttendancePage() {
   }
 
   function fmtDate(iso: string) {
-    try {
-      return new Date(iso).toLocaleString(locale === "es" ? "es-DO" : "en-US", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-    } catch {
-      return iso;
-    }
+    return formatReportingDateTime(iso, locale, { includeSeconds: true });
   }
 
   return (

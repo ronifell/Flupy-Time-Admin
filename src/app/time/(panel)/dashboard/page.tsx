@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api";
+import { formatReportingDateTime } from "@/lib/timezone";
 
 const COUNT_UP_MS = 900;
 
@@ -140,18 +141,7 @@ export default function DashboardPage() {
   }
 
   function fmtDate(iso: string) {
-    try {
-      const d = new Date(iso);
-      return d.toLocaleString(locale === "es" ? "es-DO" : "en-US", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } catch {
-      return iso;
-    }
+    return formatReportingDateTime(iso, locale);
   }
 
   return (
