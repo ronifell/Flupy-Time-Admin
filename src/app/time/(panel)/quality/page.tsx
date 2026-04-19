@@ -74,6 +74,7 @@ export default function QualityPage() {
   const [filterUiStatus, setFilterUiStatus] = useState<QualityUiStatusFilter>("");
   const [lightbox, setLightbox] = useState<{
     qualityId: string;
+    orderId: string;
     photos: LightboxPhoto[];
     index: number;
   } | null>(null);
@@ -137,6 +138,7 @@ export default function QualityPage() {
       try {
         const detail = await apiFetch<{
           id: string;
+          orderId?: string;
           photos: {
             id: string;
             photoUrl: string;
@@ -160,7 +162,8 @@ export default function QualityPage() {
           setErr(t("qualityNoPhotos"));
           return;
         }
-        setLightbox({ qualityId: detail.id, photos, index: 0 });
+        const oid = String(detail.orderId ?? q.orderId ?? "").trim();
+        setLightbox({ qualityId: detail.id, orderId: oid, photos, index: 0 });
       } catch {
         setErr(t("errorLoad"));
       }
@@ -428,6 +431,7 @@ export default function QualityPage() {
         <QualityLightbox
           open
           qualityId={lightbox.qualityId}
+          orderId={lightbox.orderId}
           token={token}
           photos={lightbox.photos}
           index={lightbox.index}

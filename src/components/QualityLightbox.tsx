@@ -20,6 +20,8 @@ export type LightboxPhoto = {
 type Props = {
   open: boolean;
   qualityId: string;
+  /** Work order / case number shown at the top while viewing photos */
+  orderId?: string | null;
   token: string | null;
   photos: LightboxPhoto[];
   index: number;
@@ -45,6 +47,7 @@ function decisionBadge(t: (k: string) => string, d: string | undefined) {
 export function QualityLightbox({
   open,
   qualityId,
+  orderId,
   token,
   photos,
   index,
@@ -166,11 +169,21 @@ export function QualityLightbox({
     >
       <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] bg-black/20 px-3 py-2 sm:px-4">
         <div className="min-w-0 text-xs text-slate-400 sm:text-sm">
-          {photo.photoType && <span className="text-teal-300/90">{photo.photoType}</span>}
-          <span className="ml-2 text-slate-500">
-            {index + 1} / {photos.length}
-          </span>
-          <span className={`ml-2 font-medium ${badge.className}`}>· {badge.label}</span>
+          {orderId != null && String(orderId).trim() !== "" && (
+            <div className="mb-1 truncate font-mono text-sm font-semibold tracking-tight text-teal-200/95">
+              <span className="font-sans text-[11px] font-normal uppercase tracking-wide text-slate-500">
+                {t("filterOrderId")}{" "}
+              </span>
+              {String(orderId).trim()}
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            {photo.photoType && <span className="text-teal-300/90">{photo.photoType}</span>}
+            <span className="text-slate-500">
+              {index + 1} / {photos.length}
+            </span>
+            <span className={`font-medium ${badge.className}`}>· {badge.label}</span>
+          </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
           <button
