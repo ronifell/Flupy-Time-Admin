@@ -4,6 +4,40 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getApiBase } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
+/** Session LRU of object URLs so revisiting photos / prev-next does not re-download full JPEGs. */
+const QUALITY_IMG_CACHE_MAX = 28;
+const qualityImgBlobCache = new Map<string, string>();
+
+function rememberBlobUrl(cacheKey: string, objectUrl: string) {
+  if (qualityImgBlobCache.has(cacheKey)) {
+    const prev = qualityImgBlobCache.get(cacheKey)!;
+    URL.revokeObjectURL(prev);
+    qualityImgBlobCache.delete(cacheKey);
+  }
+  qualityImgBlobCache.set(cacheKey, objectUrl);
+  while (qualityImgBlobCache.size > QUALITY_IMG_CACHE_MAX) {
+    const k = qualityImgBlobCache.keys().next().value as string;
+    const u = qualityImgBlobCache.get(k);
+    if (u) URL.revokeObjectURL(u);
+    qualityImgBlobCache.delete(k);
+  }
+}
+
+function prefetchQualityImage(qualityId: string, photoId: string, token: string | null) {
+  const cacheKey = `${qualityId}:${photoId}`;
+  if (qualityImgBlobCache.has(cacheKey)) return;
+  const url = `${getApiBase()}/admin/quality/${qualityId}/photos/${photoId}/image`;
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  void fetch(url, { headers, cache: "default" })
+    .then((res) => (res.ok ? res.blob() : null))
+    .then((blob) => {
+      if (!blob) return;
+      rememberBlobUrl(cacheKey, URL.createObjectURL(blob));
+    })
+    .catch(() => {});
+}
+
 export type LightboxPhoto = {
   id: string;
   photoUrl: string;
@@ -84,35 +118,49 @@ export function QualityLightbox({
 
   useEffect(() => {
     if (!open || !photoId || !qualityId) {
-      setBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
+      setBlobUrl(null);
       setImgErr(false);
+      return;
+    }
+    if (!token) {
+      setBlobUrl(null);
+      setImgErr(true);
+      return;
+    }
+
+    const cacheKey = `${qualityId}:${photoId}`;
+    const cached = qualityImgBlobCache.get(cacheKey);
+    if (cached) {
+      setBlobUrl(cached);
+      setImgErr(false);
+      const next = photos[index + 1];
+      const prev = photos[index - 1];
+      if (next?.id) prefetchQualityImage(qualityId, next.id, token);
+      if (prev?.id) prefetchQualityImage(qualityId, prev.id, token);
       return;
     }
 
     let cancelled = false;
-    let created: string | null = null;
-
-    setBlobUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
+    setBlobUrl(null);
     setImgErr(false);
 
     const url = `${getApiBase()}/admin/quality/${qualityId}/photos/${photoId}/image`;
     const headers = new Headers();
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    fetch(url, { headers, cache: "no-store" })
+    headers.set("Authorization", `Bearer ${token}`);
+    fetch(url, { headers, cache: "default" })
       .then((res) => {
         if (!res.ok) throw new Error("bad status");
         return res.blob();
       })
       .then((blob) => {
         if (cancelled) return;
-        created = URL.createObjectURL(blob);
-        setBlobUrl(created);
+        const objectUrl = URL.createObjectURL(blob);
+        rememberBlobUrl(cacheKey, objectUrl);
+        setBlobUrl(objectUrl);
+        const next = photos[index + 1];
+        const prev = photos[index - 1];
+        if (next?.id) prefetchQualityImage(qualityId, next.id, token);
+        if (prev?.id) prefetchQualityImage(qualityId, prev.id, token);
       })
       .catch(() => {
         if (!cancelled) setImgErr(true);
@@ -120,9 +168,8 @@ export function QualityLightbox({
 
     return () => {
       cancelled = true;
-      if (created) URL.revokeObjectURL(created);
     };
-  }, [open, photoId, qualityId, token, index]);
+  }, [open, photoId, qualityId, token, index, photos]);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
