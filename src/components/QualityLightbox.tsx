@@ -9,6 +9,8 @@ export type LightboxPhoto = {
   photoUrl: string;
   photoType?: string;
   inspectorDecision?: string;
+  /** Validator comment when marking FE or ERROR */
+  inspectorComment?: string | null;
   /** Employee marked this photo as out of standard at upload (FE). */
   fe?: boolean;
   /** Mandatory technician comment when out of standard; visible to administrators. */
@@ -24,7 +26,11 @@ type Props = {
   onClose: () => void;
   onIndexChange: (i: number) => void;
   /** Persists the decision for this photo only. Returns true if saved; lightbox advances to the next photo on success. */
-  onPhotoDecision: (photoId: string, decision: "FE" | "ERROR" | "OK") => Promise<boolean>;
+  onPhotoDecision: (
+    photoId: string,
+    decision: "FE" | "ERROR" | "OK",
+    comment?: string | null
+  ) => Promise<boolean>;
   busy?: boolean;
 };
 
@@ -53,6 +59,8 @@ export function QualityLightbox({
   const drag = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [imgErr, setImgErr] = useState(false);
+  const [reviewComment, setReviewComment] = useState("");
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   const photo = photos[index];
   const photoId = photo?.id;
@@ -65,6 +73,11 @@ export function QualityLightbox({
     setScale(1);
     setPos({ x: 0, y: 0 });
   }, [open, index]);
+
+  useEffect(() => {
+    setReviewComment(photo?.inspectorComment?.trim() ?? "");
+    setCommentError(null);
+  }, [photo?.id, photo?.inspectorComment, open]);
 
   useEffect(() => {
     if (!open || !photoId || !qualityId) {
@@ -128,13 +141,21 @@ export function QualityLightbox({
   const applyDecision = useCallback(
     async (decision: "FE" | "ERROR" | "OK") => {
       if (!photo) return;
-      const ok = await onPhotoDecision(photo.id, decision);
+      const trimmed = reviewComment.trim();
+      if ((decision === "FE" || decision === "ERROR") && !trimmed) {
+        setCommentError(t("qualityInspectorCommentRequired"));
+        return;
+      }
+      setCommentError(null);
+      const ok = await onPhotoDecision(photo.id, decision, decision === "OK" ? null : trimmed);
       if (ok && index < photos.length - 1) onIndexChange(index + 1);
     },
-    [photo, onPhotoDecision, index, photos.length, onIndexChange]
+    [photo, onPhotoDecision, index, photos.length, onIndexChange, reviewComment, t]
   );
 
   if (!open || !photo) return null;
+
+  const inspectorDecU = String(photo.inspectorDecision || "").toUpperCase();
 
   return (
     <div
@@ -218,6 +239,18 @@ export function QualityLightbox({
         </div>
       )}
 
+      {(inspectorDecU === "FE" || inspectorDecU === "ERROR") &&
+        (photo.inspectorComment?.trim() ?? "").length > 0 && (
+          <div className="border-b border-sky-500/20 bg-sky-950/30 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-200/90">
+              {t("qualityInspectorSavedNote")}
+            </p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-sky-50/95">
+              {photo.inspectorComment?.trim()}
+            </p>
+          </div>
+        )}
+
       <div
         className="relative flex flex-1 cursor-grab items-center justify-center overflow-hidden active:cursor-grabbing"
         onWheel={onWheel}
@@ -270,6 +303,26 @@ export function QualityLightbox({
       <p className="border-t border-white/5 px-4 py-1.5 text-center text-[11px] text-slate-500">
         {t("qualityPerPhotoHint")}
       </p>
+
+      <div className="border-t border-white/[0.08] bg-black/40 px-4 py-3">
+        <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-400" htmlFor="quality-inspector-comment">
+          {t("qualityInspectorCommentLabel")}
+        </label>
+        <textarea
+          id="quality-inspector-comment"
+          rows={3}
+          value={reviewComment}
+          onChange={(e) => {
+            setReviewComment(e.target.value);
+            setCommentError(null);
+          }}
+          disabled={busy}
+          placeholder={t("qualityInspectorCommentPlaceholder")}
+          className="mt-2 w-full resize-y rounded-xl border border-white/[0.12] bg-[rgba(3,6,14,0.75)] px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-teal-400/40 focus:ring-2 focus:ring-teal-400/15 disabled:opacity-50"
+        />
+        <p className="mt-1.5 text-[11px] text-slate-500">{t("qualityInspectorCommentHint")}</p>
+        {commentError && <p className="mt-2 text-xs text-rose-400">{commentError}</p>}
+      </div>
 
       <div className="flex flex-wrap items-center justify-center gap-2 border-t border-white/[0.08] bg-black/35 px-4 py-3 backdrop-blur-md">
         <button

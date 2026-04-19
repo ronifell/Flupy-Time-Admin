@@ -142,6 +142,7 @@ export default function QualityPage() {
             photoUrl: string;
             photoType: string;
             inspectorDecision?: string;
+            inspectorComment?: string | null;
             fe?: boolean;
             feComment?: string | null;
           }[];
@@ -151,6 +152,7 @@ export default function QualityPage() {
           photoUrl: p.photoUrl,
           photoType: p.photoType,
           inspectorDecision: String(p.inspectorDecision || "NONE").toUpperCase(),
+          inspectorComment: p.inspectorComment ?? null,
           fe: Boolean(p.fe),
           feComment: p.feComment ?? null
         }));
@@ -167,21 +169,35 @@ export default function QualityPage() {
   );
 
   const onPhotoDecision = useCallback(
-    async (photoId: string, decision: "FE" | "ERROR" | "OK"): Promise<boolean> => {
+    async (
+      photoId: string,
+      decision: "FE" | "ERROR" | "OK",
+      comment?: string | null
+    ): Promise<boolean> => {
       if (!token || !lightbox) return false;
       setBusy(true);
       try {
         await apiFetch(`/admin/quality/${lightbox.qualityId}/review`, {
           method: "PATCH",
           token,
-          body: JSON.stringify({ photoId, decision })
+          body: JSON.stringify({
+            photoId,
+            decision,
+            ...(decision === "OK" ? {} : { comment: comment ?? "" })
+          })
         });
         setLightbox((s) => {
           if (!s) return s;
           return {
             ...s,
             photos: s.photos.map((p) =>
-              p.id === photoId ? { ...p, inspectorDecision: decision } : p
+              p.id === photoId
+                ? {
+                    ...p,
+                    inspectorDecision: decision,
+                    inspectorComment: decision === "OK" ? null : (comment ?? "").trim()
+                  }
+                : p
             )
           };
         });
