@@ -363,7 +363,7 @@ export default function EmployeesPage() {
                       <option value="">{t("geofenceClear")}</option>
                       {geofences.map((g) => (
                         <option key={g.geofenceKey} value={g.geofenceKey}>
-                          {g.geofenceKey} · {g.officeName}
+                          {g.officeName}
                         </option>
                       ))}
                     </select>
