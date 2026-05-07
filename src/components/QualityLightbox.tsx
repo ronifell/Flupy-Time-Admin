@@ -42,6 +42,10 @@ export type LightboxPhoto = {
   id: string;
   photoUrl: string;
   photoType?: string;
+  employeeCode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  capturedAt?: string | null;
   inspectorDecision?: string;
   /** Validator comment when marking FE or ERROR */
   inspectorComment?: string | null;
@@ -104,6 +108,10 @@ export function QualityLightbox({
   const badge = photo ? decisionBadge(t, photo.inspectorDecision) : { label: "", className: "" };
   const employeeComment = photo?.feComment?.trim() ?? "";
   const showTechnicianNonCompliance = Boolean(photo?.fe) || employeeComment.length > 0;
+  const coordinatesLabel =
+    photo.latitude != null && photo.longitude != null
+      ? `${Number(photo.latitude).toFixed(6)}, ${Number(photo.longitude).toFixed(6)}`
+      : "N/A";
 
   useEffect(() => {
     if (!open) return;
@@ -283,6 +291,23 @@ export function QualityLightbox({
           >
             {t("close")}
           </button>
+        </div>
+      </div>
+
+      <div className="border-b border-white/[0.06] bg-black/25 px-4 py-2">
+        <div className="grid grid-cols-1 gap-1 text-[11px] text-slate-400 sm:grid-cols-3">
+          <p>
+            <span className="text-slate-500">{t("filterEmployeeCode")}: </span>
+            <span className="font-mono text-slate-300">{photo.employeeCode || "N/A"}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">{t("coords")}: </span>
+            <span className="font-mono text-slate-300">{coordinatesLabel}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">{t("occurredAt")}: </span>
+            <span className="text-slate-300">{photo.capturedAt || "N/A"}</span>
+          </p>
         </div>
       </div>
 

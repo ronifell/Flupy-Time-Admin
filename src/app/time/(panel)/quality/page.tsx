@@ -22,6 +22,14 @@ type QItem = {
   createdAt: string;
 };
 
+function inspectorDecisionLabel(decision: string, t: (k: string) => string) {
+  const d = String(decision || "NONE").toUpperCase();
+  if (d === "OK") return t("uiStatusOk");
+  if (d === "FE") return t("uiStatusFe");
+  if (d === "ERROR") return t("uiStatusError");
+  return t("qualityPhotoNotReviewed");
+}
+
 type EmpOption = { id: string; employeeCode: string; fullName: string };
 
 function badgeForItem(item: QItem, t: (k: string) => string) {
@@ -143,6 +151,10 @@ export default function QualityPage() {
             id: string;
             photoUrl: string;
             photoType: string;
+            employeeCode?: string | null;
+            latitude?: number | null;
+            longitude?: number | null;
+            capturedAt?: string | null;
             inspectorDecision?: string;
             inspectorComment?: string | null;
             fe?: boolean;
@@ -153,6 +165,10 @@ export default function QualityPage() {
           id: p.id,
           photoUrl: p.photoUrl,
           photoType: p.photoType,
+          employeeCode: p.employeeCode ?? q.technicianCode,
+          latitude: p.latitude ?? null,
+          longitude: p.longitude ?? null,
+          capturedAt: p.capturedAt ?? null,
           inspectorDecision: String(p.inspectorDecision || "NONE").toUpperCase(),
           inspectorComment: p.inspectorComment ?? null,
           fe: Boolean(p.fe),
@@ -338,6 +354,7 @@ export default function QualityPage() {
               <th className="px-4 py-3 font-medium">{t("date")}</th>
               <th className="px-4 py-3 font-medium">{t("filterOrderId")}</th>
               <th className="px-4 py-3 font-medium">{t("workType")}</th>
+              <th className="px-4 py-3 font-medium">{t("inspectorDecision")}</th>
               <th className="px-4 py-3 font-medium">{t("filterEmployeeCode")}</th>
               <th className="px-4 py-3 font-medium">{t("technician")}</th>
               <th className="px-4 py-3 font-medium text-right">{t("qualityPhotoCount")}</th>
@@ -347,7 +364,7 @@ export default function QualityPage() {
           <tbody className="divide-y divide-white/5 text-slate-300">
             {items.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
                   {t("noData")}
                 </td>
               </tr>
@@ -364,6 +381,9 @@ export default function QualityPage() {
                   <td className="px-4 py-3 whitespace-nowrap text-slate-400">{fmt(q.createdAt)}</td>
                   <td className="px-4 py-3 font-mono text-teal-200/90">{q.orderId}</td>
                   <td className="px-4 py-3 text-slate-400">{q.workType}</td>
+                  <td className="px-4 py-3 text-slate-300">
+                    {inspectorDecisionLabel(q.inspectorDecision, t)}
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-400">{q.technicianCode}</td>
                   <td className="px-4 py-3 text-white">{q.technicianName}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-slate-300">{q.photoCount}</td>
@@ -407,6 +427,9 @@ export default function QualityPage() {
                 {t("filterOrderId")}: {q.orderId}
               </p>
               <p className="text-xs text-slate-400">{q.workType}</p>
+              <p className="text-xs text-slate-500">
+                {t("inspectorDecision")}: {inspectorDecisionLabel(q.inspectorDecision, t)}
+              </p>
               <div className="mt-2 border-t border-white/5 pt-2">
                 <p className="text-xs text-slate-500">
                   {q.technicianName} · <span className="font-mono">{q.technicianCode}</span>
