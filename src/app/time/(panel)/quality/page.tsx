@@ -47,13 +47,17 @@ function badgeForItem(item: QItem, t: (k: string) => string) {
 
 type QualityUiStatusFilter = "" | "IN_PROGRESS" | "FE" | "ERROR" | "OK";
 
+/** Matches `qualities.inspector_decision` (NONE = pending / not reviewed). */
+type InspectorDecisionFilter = "" | "NONE" | "FE" | "ERROR" | "OK";
+
 function buildQualityQuery(
   fromDate: string,
   toDate: string,
   userId: string,
   employeeCode: string,
   orderId: string,
-  uiStatus: QualityUiStatusFilter
+  uiStatus: QualityUiStatusFilter,
+  inspectorDecision: InspectorDecisionFilter
 ): string {
   const qs = new URLSearchParams();
   if (fromDate) qs.set("fromDate", fromDate);
@@ -64,6 +68,7 @@ function buildQualityQuery(
   const ord = orderId.trim();
   if (ord) qs.set("orderId", ord);
   if (uiStatus) qs.set("uiStatus", uiStatus);
+  if (inspectorDecision) qs.set("inspectorDecision", inspectorDecision);
   const q = qs.toString();
   return q ? `?${q}` : "";
 }
@@ -80,6 +85,7 @@ export default function QualityPage() {
   const [filterEmployeeCode, setFilterEmployeeCode] = useState("");
   const [filterOrderId, setFilterOrderId] = useState("");
   const [filterUiStatus, setFilterUiStatus] = useState<QualityUiStatusFilter>("");
+  const [filterInspectorDecision, setFilterInspectorDecision] = useState<InspectorDecisionFilter>("");
   const [lightbox, setLightbox] = useState<{
     qualityId: string;
     orderId: string;
@@ -95,12 +101,13 @@ export default function QualityPage() {
       user: string,
       employeeCode: string,
       orderId: string,
-      status: QualityUiStatusFilter
+      status: QualityUiStatusFilter,
+      inspectorDecision: InspectorDecisionFilter
     ) => {
       if (!token) return;
       setErr(null);
       try {
-        const query = buildQualityQuery(from, to, user, employeeCode, orderId, status);
+        const query = buildQualityQuery(from, to, user, employeeCode, orderId, status, inspectorDecision);
         const data = await apiFetch<{ items: QItem[] }>(`/admin/quality/items${query}`, { token });
         setItems(data.items || []);
       } catch (e) {
@@ -115,7 +122,7 @@ export default function QualityPage() {
 
   useEffect(() => {
     if (!token) return;
-    void fetchItemsRef.current("", "", "", "", "", "");
+    void fetchItemsRef.current("", "", "", "", "", "", "");
   }, [token]);
 
   useEffect(() => {
@@ -126,8 +133,25 @@ export default function QualityPage() {
   }, [token]);
 
   const applyFilters = useCallback(() => {
-    void fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus);
-  }, [fetchItems, fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus]);
+    void fetchItems(
+      fromDate,
+      toDate,
+      filterUserId,
+      filterEmployeeCode,
+      filterOrderId,
+      filterUiStatus,
+      filterInspectorDecision
+    );
+  }, [
+    fetchItems,
+    fromDate,
+    toDate,
+    filterUserId,
+    filterEmployeeCode,
+    filterOrderId,
+    filterUiStatus,
+    filterInspectorDecision
+  ]);
 
   const clearFilters = useCallback(() => {
     setFromDate("");
@@ -136,7 +160,8 @@ export default function QualityPage() {
     setFilterEmployeeCode("");
     setFilterOrderId("");
     setFilterUiStatus("");
-    void fetchItems("", "", "", "", "", "");
+    setFilterInspectorDecision("");
+    void fetchItems("", "", "", "", "", "", "");
   }, [fetchItems]);
 
   const openGallery = useCallback(
@@ -220,7 +245,15 @@ export default function QualityPage() {
             )
           };
         });
-        await fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus);
+        await fetchItems(
+          fromDate,
+          toDate,
+          filterUserId,
+          filterEmployeeCode,
+          filterOrderId,
+          filterUiStatus,
+          filterInspectorDecision
+        );
         return true;
       } catch (e) {
         setErr(e instanceof ApiError ? e.message : t("errorLoad"));
@@ -229,7 +262,19 @@ export default function QualityPage() {
         setBusy(false);
       }
     },
-    [token, lightbox, fetchItems, t, fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus]
+    [
+      token,
+      lightbox,
+      fetchItems,
+      t,
+      fromDate,
+      toDate,
+      filterUserId,
+      filterEmployeeCode,
+      filterOrderId,
+      filterUiStatus,
+      filterInspectorDecision
+    ]
   );
 
   function fmt(iso: string) {
@@ -249,7 +294,15 @@ export default function QualityPage() {
         <button
           type="button"
           onClick={() =>
-            void fetchItems(fromDate, toDate, filterUserId, filterEmployeeCode, filterOrderId, filterUiStatus)
+            void fetchItems(
+              fromDate,
+              toDate,
+              filterUserId,
+              filterEmployeeCode,
+              filterOrderId,
+              filterUiStatus,
+              filterInspectorDecision
+            )
           }
           className="self-start rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-sm text-slate-200 backdrop-blur-sm transition hover:border-teal-400/30"
         >
@@ -319,6 +372,20 @@ export default function QualityPage() {
             >
               <option value="">{t("filterStatusAll")}</option>
               <option value="IN_PROGRESS">{t("uiStatusInProgress")}</option>
+              <option value="FE">{t("uiStatusFe")}</option>
+              <option value="ERROR">{t("uiStatusError")}</option>
+              <option value="OK">{t("uiStatusOk")}</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400">{t("filterInspectorDecision")}</label>
+            <select
+              value={filterInspectorDecision}
+              onChange={(e) => setFilterInspectorDecision(e.target.value as InspectorDecisionFilter)}
+              className={inputClass}
+            >
+              <option value="">{t("filterInspectorDecisionAll")}</option>
+              <option value="NONE">{t("filterInspectorDecisionPending")}</option>
               <option value="FE">{t("uiStatusFe")}</option>
               <option value="ERROR">{t("uiStatusError")}</option>
               <option value="OK">{t("uiStatusOk")}</option>
